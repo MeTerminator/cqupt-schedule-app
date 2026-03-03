@@ -40,7 +40,11 @@ struct ContentView: View {
                     }
                     .navigationBarHidden(true)
                     .sheet(item: $selectedCourse) { course in
-                        CourseDetailView(course: course, courseDate: calculateDate(week: course.week, day: course.day))
+                        CourseDetailView(
+                            course: course,
+                            courseDate: calculateDate(week: course.week, day: course.day),
+                            viewModel: viewModel
+                        )
                     }
                     .sheet(isPresented: $showUserSheet) {
                         UserDetailView(viewModel: viewModel, showCalendarSheet: $showCalendarSheet) {

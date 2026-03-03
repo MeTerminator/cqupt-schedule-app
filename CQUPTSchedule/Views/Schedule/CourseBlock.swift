@@ -40,10 +40,12 @@ struct CourseBlock: View {
                 .opacity(0.9)
             
             if course.type != "常规" {
-                Image(systemName: isExam ? "pencil.and.outline" : "star.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(isExam ? .orange : .yellow)
+                Image(systemName: course.type == "冲突" ? "exclamationmark.triangle.fill" : (course.type == "考试" ? "pencil.and.outline" : "star.fill"))
+                    .font(.system(size: 12))
+                    .foregroundColor(course.type == "考试" ? .orange : .yellow)
+                    .padding(.top, 4)
             }
+            
             Spacer(minLength: 1)
         }
         .padding(.horizontal, 2)
