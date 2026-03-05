@@ -2,6 +2,8 @@
 
 支持 Android & iOS，由 Flutter 开发。
 
+反馈QQ群: 1051832310
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
