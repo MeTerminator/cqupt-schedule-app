@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/schedule_model.dart';
+import '../services/widget_service.dart';
 
 class ScheduleViewModel extends ChangeNotifier {
   ScheduleResponse? scheduleData;
@@ -236,6 +237,7 @@ class ScheduleViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching data: $e");
     } finally {
+      await WidgetService.syncToWidget(this);
       if (!silent) {
         isLoading = false;
         notifyListeners();

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
 import '../utils/extensions.dart';
-import '../services/calendar_service.dart';
 import 'add_custom_course_view.dart';
 import 'calendar_export_view.dart';
 

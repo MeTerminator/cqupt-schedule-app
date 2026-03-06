@@ -2,12 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-	<string>我们需要写入权限，以便将课程表添加到您的日历。</string>
-	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>我们需要完整访问您的日历，以便管理课表行程。</string>
-	<key>NSCalendarsUsageDescription</key>
-	<string>我们需要访问您的日历，以便将课程表同步到系统日历中。</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
@@ -32,6 +26,12 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>我们需要完整访问您的日历，以便管理课表行程。</string>
+	<key>NSCalendarsUsageDescription</key>
+	<string>我们需要访问您的日历，以便将课程表同步到系统日历中。</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>我们需要写入权限，以便将课程表添加到您的日历。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

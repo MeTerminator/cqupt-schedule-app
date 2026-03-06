@@ -123,67 +123,73 @@ class CourseBlock extends StatelessWidget {
 
             Padding(
               padding: const EdgeInsets.all(1.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
+              child: SizedBox.expand(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    const Spacer(),
 
-                  // 2. 课程名称
-                  Text.rich(
-                    getFormattedTitle(course.course),
-                    textAlign: TextAlign.center,
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(height: 1.2),
-                  ),
-
-                  const SizedBox(height: 2),
-                  // 3. 课程地点
-                  Text(
-                    course.location,
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: baseTextColor.withOpacity(0.8),
-                      fontWeight: FontWeight.w500,
-                      height: 1.1,
+                    // 2. 课程名称
+                    Text.rich(
+                      getFormattedTitle(course.course),
+                      textAlign: TextAlign.center, // 这里控制文本行内居中
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(height: 1.2),
                     ),
-                  ),
 
-                  // 1. 进度/高亮图标区域
-                  if (isOngoing)
-                    _buildProgressIndicator(viewModel.getCourseProgress(course))
-                  else if (shouldHighlight)
-                    const Padding(
-                      padding: EdgeInsets.only(top: 6),
-                      child: Icon(
-                        Icons.access_time_filled,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    )
-                  else if (course.type != "常规")
-                    Padding(
-                      padding: const EdgeInsets.only(top: 4),
-                      child: Icon(
-                        course.type == "冲突"
-                            ? Icons.warning_rounded
-                            : (isExam
-                                  ? Icons.edit_note_rounded
-                                  : Icons.stars_rounded),
-                        size: 16, // 对应 SwiftUI size 12，但在 Flutter 16 视觉更接近
-                        color: course.type == "考试"
-                            ? Colors.orange
-                            : Colors.yellow,
-                      ),
-                    )
-                  else
-                    const SizedBox(),
+                    const SizedBox(height: 2),
 
-                  const Spacer(),
-                ],
+                    // 3. 课程地点
+                    Text(
+                      course.location,
+                      textAlign: TextAlign.center, // 这里控制文本行内居中
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: baseTextColor.withOpacity(0.8),
+                        fontWeight: FontWeight.w500,
+                        height: 1.1,
+                      ),
+                    ),
+
+                    // 1. 进度/高亮图标区域 (图标也需要被包裹在 Center 或保持 Column 居中)
+                    if (isOngoing)
+                      _buildProgressIndicator(
+                        viewModel.getCourseProgress(course),
+                      )
+                    else if (shouldHighlight)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 6),
+                        child: Icon(
+                          Icons.access_time_filled,
+                          size: 16,
+                          color: Colors.white,
+                        ),
+                      )
+                    else if (course.type != "常规")
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Icon(
+                          course.type == "冲突"
+                              ? Icons.warning_rounded
+                              : (isExam
+                                    ? Icons.edit_note_rounded
+                                    : Icons.stars_rounded),
+                          size: 16,
+                          color: course.type == "考试"
+                              ? Colors.orange
+                              : Colors.yellow,
+                        ),
+                      )
+                    else
+                      const SizedBox(),
+
+                    const Spacer(),
+                  ],
+                ),
               ),
             ),
           ],

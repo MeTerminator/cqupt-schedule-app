@@ -1,4 +1,3 @@
-
 class ScheduleResponse {
   final String studentId;
   final String studentName;
@@ -16,6 +15,15 @@ class ScheduleResponse {
     required this.instances,
   });
 
+  Map<String, dynamic> toJson() => {
+    'student_id': studentId,
+    'student_name': studentName,
+    'academic_year': academicYear,
+    'semester': semester,
+    'week_1_monday': week1Monday,
+    'instances': instances.map((e) => e.toJson()).toList(),
+  };
+
   factory ScheduleResponse.fromJson(Map<String, dynamic> json) {
     return ScheduleResponse(
       studentId: json['student_id'] ?? "",
@@ -23,7 +31,8 @@ class ScheduleResponse {
       academicYear: json['academic_year'] ?? "",
       semester: json['semester'] ?? "",
       week1Monday: json['week_1_monday'] ?? DateTime.now().toIso8601String(),
-      instances: (json['instances'] as List?)
+      instances:
+          (json['instances'] as List?)
               ?.map((e) => CourseInstance.fromJson(e))
               .toList() ??
           [],
@@ -73,15 +82,19 @@ class CourseInstance {
     // 核心修改：计算唯一 ID
     // 逻辑：课程名_周次_星期_第一节课序号
     final String courseName = json['course'] ?? "unknown";
-    final int w = json['week'] is int ? json['week'] : int.tryParse(json['week'].toString()) ?? 1;
-    final int d = json['day'] is int ? json['day'] : int.tryParse(json['day'].toString()) ?? 1;
+    final int w = json['week'] is int
+        ? json['week']
+        : int.tryParse(json['week'].toString()) ?? 1;
+    final int d = json['day'] is int
+        ? json['day']
+        : int.tryParse(json['day'].toString()) ?? 1;
     final int firstPeriod = periodsList.isNotEmpty ? periodsList.first : 0;
-    
+
     // 生成 ID: 例如 "高等数学_1_1_1"
     final String uniqueId = "${courseName}_${w}_${d}_$firstPeriod";
 
     return CourseInstance(
-      id: json['id'] ?? uniqueId, 
+      id: json['id'] ?? uniqueId,
       course: courseName,
       teacher: json['teacher'],
       week: w,
@@ -99,21 +112,21 @@ class CourseInstance {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'course': course,
-        'teacher': teacher,
-        'week': week,
-        'day': day,
-        'periods': periods,
-        'start_time': startTime,
-        'end_time': endTime,
-        'location': location,
-        'type': type,
-        'course_type': courseType,
-        'credit': credit,
-        'description': description,
-        'colorIndex': colorIndex,
-      };
+    'id': id,
+    'course': course,
+    'teacher': teacher,
+    'week': week,
+    'day': day,
+    'periods': periods,
+    'start_time': startTime,
+    'end_time': endTime,
+    'location': location,
+    'type': type,
+    'course_type': courseType,
+    'credit': credit,
+    'description': description,
+    'colorIndex': colorIndex,
+  };
 }
 
 class CustomCourse {
@@ -161,43 +174,53 @@ class CustomCourse {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'location': location,
-        'description': description,
-        'colorIndex': colorIndex,
-        'weeks': weeks,
-        'day': day,
-        'startPeriod': startPeriod,
-        'endPeriod': endPeriod,
-      };
+    'id': id,
+    'title': title,
+    'location': location,
+    'description': description,
+    'colorIndex': colorIndex,
+    'weeks': weeks,
+    'day': day,
+    'startPeriod': startPeriod,
+    'endPeriod': endPeriod,
+  };
 
   List<CourseInstance> toInstances() {
-    final periods = List.generate(endPeriod - startPeriod + 1, (i) => startPeriod + i);
+    final periods = List.generate(
+      endPeriod - startPeriod + 1,
+      (i) => startPeriod + i,
+    );
     final startT = timeTable[startPeriod]?['begin'] ?? '08:00';
     final endT = timeTable[endPeriod]?['end'] ?? '08:45';
 
     // 自定义课程也需要遵循 唯一ID 规则
-    return weeks.map((w) => CourseInstance(
-      id: '${id}_${w}_${day}_$startPeriod',
-      course: title,
-      teacher: "",
-      week: w,
-      day: day,
-      periods: periods,
-      startTime: startT,
-      endTime: endT,
-      location: location,
-      type: "自定义行程",
-      courseType: "自定义行程",
-      credit: null,
-      description: description,
-      colorIndex: colorIndex,
-    )).toList();
+    return weeks
+        .map(
+          (w) => CourseInstance(
+            id: '${id}_${w}_${day}_$startPeriod',
+            course: title,
+            teacher: "",
+            week: w,
+            day: day,
+            periods: periods,
+            startTime: startT,
+            endTime: endT,
+            location: location,
+            type: "自定义行程",
+            courseType: "自定义行程",
+            credit: null,
+            description: description,
+            colorIndex: colorIndex,
+          ),
+        )
+        .toList();
   }
 
   CourseInstance toInstance() {
-    final periods = List.generate(endPeriod - startPeriod + 1, (i) => startPeriod + i);
+    final periods = List.generate(
+      endPeriod - startPeriod + 1,
+      (i) => startPeriod + i,
+    );
     final startT = timeTable[startPeriod]?['begin'] ?? '08:00';
     final endT = timeTable[endPeriod]?['end'] ?? '08:45';
 

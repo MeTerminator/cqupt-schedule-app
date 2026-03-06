@@ -2,6 +2,8 @@ PODS:
   - device_calendar (0.0.1):
     - Flutter
   - Flutter (1.0.0)
+  - home_widget (0.0.1):
+    - Flutter
   - permission_handler_apple (9.3.0):
     - Flutter
   - shared_preferences_foundation (0.0.1):
@@ -11,6 +13,7 @@ PODS:
 DEPENDENCIES:
   - device_calendar (from `.symlinks/plugins/device_calendar/ios`)
   - Flutter (from `Flutter`)
+  - home_widget (from `.symlinks/plugins/home_widget/ios`)
   - permission_handler_apple (from `.symlinks/plugins/permission_handler_apple/ios`)
   - shared_preferences_foundation (from `.symlinks/plugins/shared_preferences_foundation/darwin`)
 
@@ -19,6 +22,8 @@ EXTERNAL SOURCES:
     :path: ".symlinks/plugins/device_calendar/ios"
   Flutter:
     :path: Flutter
+  home_widget:
+    :path: ".symlinks/plugins/home_widget/ios"
   permission_handler_apple:
     :path: ".symlinks/plugins/permission_handler_apple/ios"
   shared_preferences_foundation:
@@ -27,9 +32,10 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   device_calendar: b55b2c5406cfba45c95a59f9059156daee1f74ed
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
+  home_widget: 54b4f6b36ed8d64cfee594a476225c35c3e45091
   permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
   shared_preferences_foundation: 7036424c3d8ec98dfe75ff1667cb0cd531ec82bb
 
-PODFILE CHECKSUM: df191fe341d6247c64e21dc3ef4b9f6693ae07ba
+PODFILE CHECKSUM: e0faeb9921700c3d5d6c3af4beae371ea1de5e69
 
 COCOAPODS: 1.16.2
