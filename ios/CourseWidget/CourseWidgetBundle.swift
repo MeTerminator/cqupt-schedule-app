@@ -2,8 +2,8 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct CourseWidgetsBundle: WidgetBundle {
+struct CquptScheduleWidgetBundle: WidgetBundle {
     var body: some Widget {
-        CourseWidget()
+        TodayCourseWidget()
     }
 }
