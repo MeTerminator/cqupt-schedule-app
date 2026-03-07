@@ -323,6 +323,7 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> addCustomCourse(CustomCourse course) async {
     customCourses.add(course);
     await saveCustomCourses();
+    await WidgetService.syncToWidget(this);
     triggerToast("行程已添加");
   }
 
@@ -331,6 +332,7 @@ class ScheduleViewModel extends ChangeNotifier {
     if (index != -1) {
       customCourses[index] = course;
       await saveCustomCourses();
+      await WidgetService.syncToWidget(this);
       triggerToast("行程已更新");
     }
   }
@@ -354,6 +356,7 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> clearAllCustomCourses() async {
     customCourses.clear();
     await saveCustomCourses();
+    await WidgetService.syncToWidget(this);
     triggerToast("自定义行程已清空");
   }
 
@@ -361,6 +364,7 @@ class ScheduleViewModel extends ChangeNotifier {
     final prefs = await SharedPreferences.getInstance();
     final String data = jsonEncode(customCourses.map((e) => e.toJson()).toList());
     await prefs.setString(kCustomCoursesKey, data);
+    await WidgetService.syncToWidget(this);
   }
 
   Future<void> loadCustomCourses() async {
@@ -371,6 +375,7 @@ class ScheduleViewModel extends ChangeNotifier {
       customCourses = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
       notifyListeners();
     }
+    await WidgetService.syncToWidget(this);
   }
 
   List<CourseInstance> allCourses(int week) {
