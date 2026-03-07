@@ -1,13 +1,6 @@
 import WidgetKit
 import SwiftUI
 
-// MARK: - 辅助扩展：安全取值
-extension Array {
-    subscript(safe index: Int) -> Element? {
-        return indices.contains(index) ? self[index] : nil
-    }
-}
-
 struct UpcomingCourseWidgetView: View {
     @Environment(\.widgetFamily) var family
     var entry: CourseEntry

@@ -26,7 +26,10 @@ class ScheduleViewModel extends ChangeNotifier {
   static const String kSavedIdKey = "saved_id";
 
   ScheduleViewModel() {
-    _refreshTimer = Timer.periodic(const Duration(minutes: 1), (_) => refreshData(silent: true));
+    _refreshTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => refreshData(silent: true),
+    );
     loadCustomCourses();
   }
 
@@ -167,7 +170,8 @@ class ScheduleViewModel extends ChangeNotifier {
       for (var c in courses) {
         final int courseStartMinutes = _timeToMinutes(c.startTime);
         final int weekOffset = (w - currentRealWeek) * 10080;
-        final int courseAbsoluteMinutes = weekOffset + (c.day - 1) * 1440 + courseStartMinutes;
+        final int courseAbsoluteMinutes =
+            weekOffset + (c.day - 1) * 1440 + courseStartMinutes;
 
         final diff = courseAbsoluteMinutes - nowAbsoluteMinutes;
 
@@ -190,6 +194,7 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> startup(String studentId) async {
     currentId = studentId;
     await loadFromCache(isInitial: true);
+    await WidgetService.syncToWidget(this);
     refreshData(silent: true);
   }
 
@@ -197,12 +202,13 @@ class ScheduleViewModel extends ChangeNotifier {
     final instances = scheduleData?.instances;
     if (instances == null) return;
 
-    final names = instances
-        .where((e) => !e.type.contains("考试"))
-        .map((e) => e.course)
-        .toSet()
-        .toList()
-      ..sort();
+    final names =
+        instances
+            .where((e) => !e.type.contains("考试"))
+            .map((e) => e.course)
+            .toSet()
+            .toList()
+          ..sort();
 
     courseColorMap.clear();
     for (int i = 0; i < names.length; i++) {
@@ -220,7 +226,9 @@ class ScheduleViewModel extends ChangeNotifier {
     }
 
     try {
-      final url = Uri.parse("https://cqupt.ishub.top/api/curriculum/$currentId/curriculum.json");
+      final url = Uri.parse(
+        "https://cqupt.ishub.top/api/curriculum/$currentId/curriculum.json",
+      );
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
@@ -275,7 +283,7 @@ class ScheduleViewModel extends ChangeNotifier {
     try {
       String dateStr = scheduleData!.week1Monday;
       DateTime date;
-      
+
       try {
         date = DateTime.parse(dateStr);
       } catch (e) {
@@ -362,7 +370,9 @@ class ScheduleViewModel extends ChangeNotifier {
 
   Future<void> saveCustomCourses() async {
     final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(customCourses.map((e) => e.toJson()).toList());
+    final String data = jsonEncode(
+      customCourses.map((e) => e.toJson()).toList(),
+    );
     await prefs.setString(kCustomCoursesKey, data);
     await WidgetService.syncToWidget(this);
   }
@@ -379,7 +389,8 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   List<CourseInstance> allCourses(int week) {
-    final apiList = scheduleData?.instances.where((e) => e.week == week).toList() ?? [];
+    final apiList =
+        scheduleData?.instances.where((e) => e.week == week).toList() ?? [];
     final customList = customCourses
         .expand((e) => e.toInstances())
         .where((e) => e.week == week)
@@ -410,7 +421,9 @@ class ScheduleViewModel extends ChangeNotifier {
       ...customCourses.map((e) => e.toInstance()),
     ];
 
-    final relatedCourses = allInstances.where((e) => e.course == course.course).toList();
+    final relatedCourses = allInstances
+        .where((e) => e.course == course.course)
+        .toList();
     final weeks = relatedCourses.map((e) => e.week).toList();
 
     if (weeks.isEmpty) return "第 ${course.week} 周";
