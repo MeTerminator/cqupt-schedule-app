@@ -19,7 +19,7 @@ class UpcomingWidget : GlanceAppWidget() {
     private val colorSecondary = ColorProvider(Color(0xFF8E8E93))
 
     override val sizeMode =
-            SizeMode.Responsive(setOf(DpSize(140.dp, 80.dp), DpSize(280.dp, 80.dp)))
+        SizeMode.Responsive(setOf(DpSize(140.dp, 60.dp), DpSize(280.dp, 80.dp)))
 
     override suspend fun provideGlance(context: Context, id: GlanceId) {
         val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
@@ -34,28 +34,23 @@ class UpcomingWidget : GlanceAppWidget() {
         val isSmall = size.width < 220.dp
 
         Column(
-                modifier =
-                        GlanceModifier.fillMaxWidth()
-                                .wrapContentHeight()
-                                .padding(horizontal = 6.dp, vertical = 4.dp)
-                                .background(GlanceTheme.colors.surface)
-                                .cornerRadius(16.dp)
-                                .padding(8.dp)
+            modifier = GlanceModifier.fillMaxWidth()
+                .wrapContentHeight()
+                .padding(horizontal = 6.dp, vertical = 4.dp)
+                .background(GlanceTheme.colors.surface)
+                .cornerRadius(16.dp)
+                .padding(8.dp)
         ) {
             Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                 Text(
-                        data?.dateStr ?: "--/--",
-                        style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurface)
+                    data?.todayDateStr ?: "--/--",
+                    style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurface)
                 )
                 Spacer(modifier = GlanceModifier.defaultWeight())
                 if (!isSmall) {
                     Text(
-                            data?.weekStr ?: "",
-                            style =
-                                    TextStyle(
-                                            fontSize = 13.sp,
-                                            color = GlanceTheme.colors.onSurface
-                                    )
+                        data?.todayWeekInfo ?: "",
+                        style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurface)
                     )
                 }
             }
@@ -63,54 +58,49 @@ class UpcomingWidget : GlanceAppWidget() {
             Spacer(modifier = GlanceModifier.height(2.dp))
 
             if (data == null) {
-                Text(
-                        "暂无课程数据",
-                        style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurface)
-                )
+                Text("暂无课程数据", style = TextStyle(fontSize = 14.sp, color = GlanceTheme.colors.onSurface))
             } else {
-                if (isSmall) SmallLayout(data) else MediumLayout(data)
+                // 新逻辑：从 courses 列表中获取数据
+                val current = data.courses.getOrNull(0)
+                val next = data.courses.getOrNull(1)
+                
+                if (isSmall) SmallLayout(current, next) else MediumLayout(current, next)
             }
         }
     }
 
     @Composable
-    private fun MediumLayout(data: ScheduleInfo) {
+    private fun MediumLayout(current: Course?, next: Course?) {
         Row(modifier = GlanceModifier.fillMaxWidth(), verticalAlignment = Alignment.Top) {
             Column(modifier = GlanceModifier.defaultWeight()) {
                 Text("当前", style = TextStyle(fontSize = 13.sp, color = colorSecondary))
-                CourseBlockView(data.currentCourse, colorYellow)
+                CourseBlockView(current, colorYellow)
             }
-
             Column(modifier = GlanceModifier.defaultWeight()) {
                 Text("接下来", style = TextStyle(fontSize = 13.sp, color = colorSecondary))
-                CourseBlockView(data.nextCourse, colorOrange)
+                CourseBlockView(next, colorOrange)
             }
         }
     }
 
     @Composable
-    private fun SmallLayout(data: ScheduleInfo) {
+    private fun SmallLayout(current: Course?, next: Course?) {
         Column(modifier = GlanceModifier.fillMaxWidth()) {
-            if (data.currentCourse != null) {
-                CourseBlockView(data.currentCourse, colorYellow)
-                if (data.nextCourse != null) {
+            if (current != null) {
+                CourseBlockView(current, colorYellow)
+                if (next != null) {
                     Row(
-                            modifier = GlanceModifier.padding(top = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically
+                        modifier = GlanceModifier.padding(top = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = GlanceModifier.size(3.dp, 20.dp).background(colorOrange)) {
                             Spacer(modifier = GlanceModifier.fillMaxSize())
                         }
                         Text(
-                                data.nextCourse.name,
-                                style =
-                                        TextStyle(
-                                                fontSize = 16.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = GlanceTheme.colors.onSurface
-                                        ),
-                                maxLines = 1,
-                                modifier = GlanceModifier.padding(start = 6.dp)
+                            next.name,
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
+                            maxLines = 1,
+                            modifier = GlanceModifier.padding(start = 6.dp)
                         )
                     }
                 }
@@ -123,7 +113,6 @@ class UpcomingWidget : GlanceAppWidget() {
     @Composable
     private fun CourseBlockView(course: Course?, barColor: ColorProvider) {
         Row(modifier = GlanceModifier.padding(vertical = 4.dp)) {
-            // 使用 barColor 传入的 ColorProvider
             Box(modifier = GlanceModifier.width(4.dp).height(60.dp).background(barColor)) {
                 Spacer(modifier = GlanceModifier.fillMaxSize())
             }
@@ -132,31 +121,18 @@ class UpcomingWidget : GlanceAppWidget() {
                     Text("无", style = TextStyle(fontSize = 14.sp, color = colorSecondary))
                 } else {
                     Text(
-                            course.name,
-                            style =
-                                    TextStyle(
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            color = GlanceTheme.colors.onSurface
-                                    ),
-                            maxLines = 1
+                        course.name,
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, color = GlanceTheme.colors.onSurface),
+                        maxLines = 1
                     )
                     Text(
-                            "${course.location}  ${course.teacher ?: "未知"}",
-                            style =
-                                    TextStyle(
-                                            fontSize = 13.sp,
-                                            color = GlanceTheme.colors.onSurface
-                                    ),
-                            maxLines = 1
+                        "${course.location}  ${course.teacher ?: "未知"}",
+                        style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurface),
+                        maxLines = 1
                     )
                     Text(
-                            "${course.startTime} - ${course.endTime}",
-                            style =
-                                    TextStyle(
-                                            fontSize = 13.sp,
-                                            color = GlanceTheme.colors.onSurface
-                                    )
+                        "${course.startTime} - ${course.endTime}",
+                        style = TextStyle(fontSize = 13.sp, color = GlanceTheme.colors.onSurface)
                     )
                 }
             }
