@@ -31,16 +31,22 @@ class TodayWidget : GlanceAppWidget() {
                     if (data == null || data.courses.isEmpty()) {
                         item { Text("近期无课程", modifier = GlanceModifier.padding(16.dp)) }
                     } else {
-                        // 1. 今日部分
-                        item {
-                            HeaderView(data.todayDateStr, data.todayCourseCount, data.todayWeekInfo)
-                            // 给 Header 和第一节课之间添加间隙
-                            Spacer(modifier = GlanceModifier.height(8.dp))
-                        }
+                        if (data.todayCourseCount > 0) {
+                            // 1. 今日部分
+                            item {
+                                HeaderView(
+                                        data.todayDateStr,
+                                        data.todayCourseCount,
+                                        data.todayWeekInfo
+                                )
+                                // 给 Header 和第一节课之间添加间隙
+                                Spacer(modifier = GlanceModifier.height(8.dp))
+                            }
 
-                        items(data.todayCourseCount) { index ->
-                            // 移除了原来的 if (index > 0) Spacer 判断，直接由 CourseRow 负责间隙
-                            CourseRow(data.courses[index])
+                            items(data.todayCourseCount) { index ->
+                                // 移除了原来的 if (index > 0) Spacer 判断，直接由 CourseRow 负责间隙
+                                CourseRow(data.courses[index])
+                            }
                         }
 
                         // 2. 明日部分
@@ -100,9 +106,7 @@ private fun CourseRow(course: Course) {
                                     .height(34.dp)
                                     .background(ColorProvider(getColorForCourse(course.name)))
                                     .cornerRadius(2.dp),
-                    content = {
-                        Spacer(modifier = GlanceModifier.fillMaxSize())
-                    }
+                    content = { Spacer(modifier = GlanceModifier.fillMaxSize()) }
             )
 
             Column(modifier = GlanceModifier.padding(start = 8.dp).defaultWeight()) {
