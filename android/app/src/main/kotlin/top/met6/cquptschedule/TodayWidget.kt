@@ -20,25 +20,26 @@ class TodayWidget : GlanceAppWidget() {
 
         provideContent {
             GlanceTheme {
+                // 最外层容器：设置白色/深色背景和圆角
                 Column(
                         modifier =
                                 GlanceModifier.fillMaxSize()
-                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .background(GlanceTheme.colors.surface) // 自动适配亮/暗主题
+                                        .cornerRadius(16.dp) // 圆角适配
+                                        .padding(8.dp) // 组件内边距
                 ) {
                     if (data == null || data.courses.isEmpty()) {
                         Text("近期无课程", modifier = GlanceModifier.padding(16.dp))
                     } else {
-                        // 头部：使用新数据模型中的字段
+                        // 头部
                         HeaderView(data.todayDateStr, data.todayCourseCount, data.todayWeekInfo)
 
-                        // 课程列表：使用 data.courses 列表渲染
+                        // 课程列表
                         Column(modifier = GlanceModifier.padding(top = 4.dp)) {
                             data.courses.forEachIndexed { index, course ->
-                                // 增加间隙的逻辑：如果不是第一行，添加 Spacer
                                 if (index > 0 && index != data.todayCourseCount) {
                                     Spacer(modifier = GlanceModifier.height(4.dp))
                                 }
-                                // 如果到了明天课程的开始，插入明日Header
                                 if (index == data.todayCourseCount) {
                                     Spacer(modifier = GlanceModifier.height(8.dp))
                                     HeaderView(
