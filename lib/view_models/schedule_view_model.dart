@@ -22,6 +22,9 @@ class ScheduleViewModel extends ChangeNotifier {
   DateTime? firstMondayDate;
   Timer? _refreshTimer;
 
+  // 标志位：是否需要动画跳转到指定周
+  bool shouldAnimateToWeek = false;
+
   static const String kCustomCoursesKey = "cloud_custom_courses";
   static const String kSavedIdKey = "saved_id";
 
@@ -296,6 +299,8 @@ class ScheduleViewModel extends ChangeNotifier {
       if (autoJump) {
         final real = calculateCurrentRealWeek();
         selectedWeek = real.clamp(0, 20);
+        // 初始加载时不使用动画
+        shouldAnimateToWeek = false;
       }
       notifyListeners();
     } catch (e) {

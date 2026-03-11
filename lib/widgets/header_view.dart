@@ -92,6 +92,8 @@ class HeaderView extends StatelessWidget {
                     HapticFeedback.mediumImpact();
                     final realWeek = viewModel.calculateCurrentRealWeek();
                     final target = realWeek.clamp(0, 20);
+                    // 设置标志位，表示需要使用动画
+                    viewModel.shouldAnimateToWeek = true;
                     viewModel.selectedWeek = target;
                     viewModel.notifyListeners();
                   },

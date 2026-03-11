@@ -196,11 +196,19 @@ class _MainHomeViewState extends State<MainHomeView> {
       builder: (context, viewModel, child) {
         if (_pageController.hasClients && _pageController.page?.round() != viewModel.selectedWeek) {
           Future.microtask(() {
-            _pageController.animateToPage(
-              viewModel.selectedWeek,
-              duration: const Duration(milliseconds: 600),
-              curve: Curves.easeInOut,
-            );
+            if (viewModel.shouldAnimateToWeek) {
+              // 用户点击返回当周按钮时使用动画
+              _pageController.animateToPage(
+                viewModel.selectedWeek,
+                duration: const Duration(milliseconds: 600),
+                curve: Curves.easeInOut,
+              );
+              // 重置标志位
+              viewModel.shouldAnimateToWeek = false;
+            } else {
+              // 初始加载或其他情况不使用动画
+              _pageController.jumpToPage(viewModel.selectedWeek);
+            }
           });
         }
 
