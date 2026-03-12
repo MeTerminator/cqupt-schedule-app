@@ -22,7 +22,6 @@ class ThemeSettings {
   final double courseBlockOpacity; // 不透明度 (0.0 - 1.0)
 
   // Header 设置
-  final double headerOpacity; // Header 不透明度 (0.0 - 1.0)
   final bool headerBlurEffect; // 是否启用毛玻璃效果
   final String? headerBackgroundColorHex; // 导航栏背景颜色
   final double headerBackgroundOpacity; // 导航栏背景不透明度 (0.0 - 1.0)
@@ -39,7 +38,6 @@ class ThemeSettings {
     this.courseBlockBorderColorHex,
     this.courseBlockBorderWidth = 0.0,
     this.courseBlockOpacity = 1.0,
-    this.headerOpacity = 1.0,
     this.headerBlurEffect = false,
     this.headerBackgroundColorHex,
     this.headerBackgroundOpacity = 1.0,
@@ -57,7 +55,6 @@ class ThemeSettings {
     'course_block_border_color_hex': courseBlockBorderColorHex,
     'course_block_border_width': courseBlockBorderWidth,
     'course_block_opacity': courseBlockOpacity,
-    'header_opacity': headerOpacity,
     'header_blur_effect': headerBlurEffect,
     'header_background_color_hex': headerBackgroundColorHex,
     'header_background_opacity': headerBackgroundOpacity,
@@ -81,7 +78,6 @@ class ThemeSettings {
       courseBlockBorderWidth: (json['course_block_border_width'] ?? 0.0)
           .toDouble(),
       courseBlockOpacity: (json['course_block_opacity'] ?? 1.0).toDouble(),
-      headerOpacity: (json['header_opacity'] ?? 1.0).toDouble(),
       headerBlurEffect: json['header_blur_effect'] as bool? ?? false,
       headerBackgroundColorHex: json['header_background_color_hex'] as String?,
       headerBackgroundOpacity: (json['header_background_opacity'] ?? 1.0)
@@ -101,7 +97,6 @@ class ThemeSettings {
     String? courseBlockBorderColorHex,
     double? courseBlockBorderWidth,
     double? courseBlockOpacity,
-    double? headerOpacity,
     bool? headerBlurEffect,
     String? headerBackgroundColorHex,
     double? headerBackgroundOpacity,
@@ -121,7 +116,6 @@ class ThemeSettings {
       courseBlockBorderWidth:
           courseBlockBorderWidth ?? this.courseBlockBorderWidth,
       courseBlockOpacity: courseBlockOpacity ?? this.courseBlockOpacity,
-      headerOpacity: headerOpacity ?? this.headerOpacity,
       headerBlurEffect: headerBlurEffect ?? this.headerBlurEffect,
       headerBackgroundColorHex:
           headerBackgroundColorHex ?? this.headerBackgroundColorHex,

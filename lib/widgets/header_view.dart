@@ -42,7 +42,6 @@ class HeaderView extends StatelessWidget {
     }
 
     final topPadding = MediaQuery.of(context).padding.top;
-    final headerOpacity = viewModel.headerOpacity;
     final hasBlurEffect = viewModel.headerBlurEffect;
     final headerBgColor = viewModel.headerBackgroundColor;
     final headerBgOpacity = viewModel.headerBackgroundOpacity;
@@ -192,11 +191,6 @@ class HeaderView extends StatelessWidget {
           child: headerContent,
         ),
       );
-    }
-
-    // 应用透明度
-    if (headerOpacity < 1.0) {
-      headerContent = Opacity(opacity: headerOpacity, child: headerContent);
     }
 
     return headerContent;

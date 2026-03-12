@@ -612,8 +612,6 @@ class ScheduleViewModel extends ChangeNotifier {
 
   BackgroundType get backgroundType => currentTheme.backgroundType;
 
-  double get headerOpacity => currentTheme.headerOpacity;
-
   bool get headerBlurEffect => currentTheme.headerBlurEffect;
 
   Color? get headerBackgroundColor {

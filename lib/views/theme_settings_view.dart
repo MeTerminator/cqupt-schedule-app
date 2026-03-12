@@ -53,8 +53,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
           children: [
             // Header 设置
             _buildSection(context, '顶部 Header 设置', [
-              _buildHeaderOpacitySlider(context),
-              const Divider(height: 1),
               _buildHeaderBlurEffectSwitch(context),
               const Divider(height: 1),
               _buildHeaderBackgroundOpacitySlider(context),
@@ -426,37 +424,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
               _updateAndSaveTheme(
                 _currentTheme.copyWith(courseBlockBorderWidth: value),
               );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeaderOpacitySlider(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Text('Header 不透明度'),
-              const Spacer(),
-              Text(
-                '${(_currentTheme.headerOpacity * 100).toInt()}%',
-                style: TextStyle(color: Colors.grey[600]),
-              ),
-            ],
-          ),
-          Slider(
-            value: _currentTheme.headerOpacity,
-            min: 0.0,
-            max: 1.0,
-            divisions: 20,
-            label: '${(_currentTheme.headerOpacity * 100).toInt()}%',
-            onChanged: (value) {
-              _updateAndSaveTheme(_currentTheme.copyWith(headerOpacity: value));
             },
           ),
         ],
