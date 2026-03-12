@@ -41,7 +41,7 @@ class ScheduleResponse {
 }
 
 class CourseInstance {
-  final String id; // 唯一ID
+  final String id; // 唯一 ID
   final String course;
   final String? teacher;
   final int week;
@@ -55,6 +55,7 @@ class CourseInstance {
   final String? credit;
   final String? description;
   final int? colorIndex;
+  final String? customColorHex; // 自定义颜色的 Hex 值
 
   CourseInstance({
     required this.id,
@@ -71,6 +72,7 @@ class CourseInstance {
     this.credit,
     this.description,
     this.colorIndex,
+    this.customColorHex,
   });
 
   factory CourseInstance.fromJson(Map<String, dynamic> json) {
@@ -135,6 +137,7 @@ class CustomCourse {
   final String location;
   final String description;
   final int colorIndex;
+  final String? customColorHex; // 自定义颜色的 Hex 值，如果为 null 则使用 colorIndex
   final List<int> weeks;
   final int day;
   final int startPeriod;
@@ -146,6 +149,7 @@ class CustomCourse {
     required this.location,
     required this.description,
     required this.colorIndex,
+    this.customColorHex,
     required this.weeks,
     required this.day,
     required this.startPeriod,
@@ -166,6 +170,7 @@ class CustomCourse {
       location: json['location'] ?? "",
       description: json['description'] ?? "",
       colorIndex: json['colorIndex'] ?? 0,
+      customColorHex: json['customColorHex'] as String?,
       weeks: weeksList.isEmpty ? [1] : weeksList,
       day: json['day'] ?? 1,
       startPeriod: json['startPeriod'] ?? 1,
@@ -179,6 +184,7 @@ class CustomCourse {
     'location': location,
     'description': description,
     'colorIndex': colorIndex,
+    'customColorHex': customColorHex,
     'weeks': weeks,
     'day': day,
     'startPeriod': startPeriod,
@@ -193,7 +199,7 @@ class CustomCourse {
     final startT = timeTable[startPeriod]?['begin'] ?? '08:00';
     final endT = timeTable[endPeriod]?['end'] ?? '08:45';
 
-    // 自定义课程也需要遵循 唯一ID 规则
+    // 自定义课程也需要遵循 唯一 ID 规则
     return weeks
         .map(
           (w) => CourseInstance(
@@ -211,6 +217,7 @@ class CustomCourse {
             credit: null,
             description: description,
             colorIndex: colorIndex,
+            customColorHex: customColorHex,
           ),
         )
         .toList();

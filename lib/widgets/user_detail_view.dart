@@ -1,10 +1,8 @@
-import 'package:cqupt_schedule_app/widgets/custom_course_list_view.dart';
 import 'package:flutter/material.dart';
-import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
-import '../utils/extensions.dart';
-import 'add_custom_course_view.dart';
 import 'calendar_export_view.dart';
+import '../views/course_color_management_view.dart';
+import '../views/custom_courses_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -114,7 +112,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       ]),
                       const SizedBox(height: 16),
 
-                      // 3. 自定义行程管理
+                      // 3. 行程管理
                       _buildSection(context, '行程管理', [
                         ListTile(
                           leading: const Icon(Icons.list_alt),
@@ -124,13 +122,26 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CustomCourseListView(
+                                builder: (context) => CustomCoursesView(
                                   viewModel: widget.viewModel,
                                 ),
                               ),
-                            ).then(
-                              (_) => setState(() {}),
-                            ); // 返回时刷新 UserDetailView
+                            ).then((_) => setState(() {}));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.palette),
+                          title: const Text('课程颜色管理'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CourseColorManagementView(
+                                  viewModel: widget.viewModel,
+                                ),
+                              ),
+                            ).then((_) => setState(() {}));
                           },
                         ),
                       ]),

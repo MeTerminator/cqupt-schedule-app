@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
-import '../utils/extensions.dart';
+import '../utils/course_colors.dart';
 import 'add_custom_course_view.dart';
 
 class CustomCourseListView extends StatefulWidget {
@@ -91,6 +91,15 @@ class _CustomCourseListViewState extends State<CustomCourseListView> {
     ).then((_) => setState(() {})); // 底部弹窗关闭后刷新界面
   }
 
+  /// Hex 颜色字符串转 Color
+  Color _hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex'; // 添加 alpha 通道
+    }
+    return Color(int.parse(hex, radix: 16));
+  }
+
   Widget _buildCustomCourseRow(
     BuildContext context,
     CustomCourse item,
@@ -130,10 +139,18 @@ class _CustomCourseListViewState extends State<CustomCourseListView> {
                 width: 10,
                 height: 10,
                 decoration: BoxDecoration(
-                  color: ColorExtensions.dynamicCourseColor(
-                    index: item.colorIndex,
-                    total: 10,
-                  ),
+                  // 优先使用 customColorHex，否则使用 colorIndex
+                  color: () {
+                    print('自定义行程列表 - 课程：${item.title}, customColorHex: ${item.customColorHex}, colorIndex: ${item.colorIndex}');
+                    if (item.customColorHex != null) {
+                      return _hexToColor(item.customColorHex!);
+                    } else {
+                      return CourseColors.dynamicCourseColor(
+                        index: item.colorIndex,
+                        total: 10,
+                      );
+                    }
+                  }(),
                   shape: BoxShape.circle,
                 ),
               ),

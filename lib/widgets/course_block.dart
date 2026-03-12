@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
-import '../utils/extensions.dart';
+import '../utils/course_colors.dart';
 
 class CourseBlock extends StatelessWidget {
   final ScheduleViewModel viewModel;
@@ -32,16 +32,28 @@ class CourseBlock extends StatelessWidget {
     if (isExam) {
       backgroundColor = isDark ? Colors.white : Colors.black;
     } else if (isCustom) {
-      backgroundColor = ColorExtensions.dynamicCourseColor(
-        index: course.colorIndex ?? 0,
-        total: 10,
-      );
+      // 自定义行程：优先使用 customColorHex，否则使用 colorIndex
+      if (course.customColorHex != null) {
+        backgroundColor = _hexToColor(course.customColorHex!);
+      } else {
+        backgroundColor = CourseColors.dynamicCourseColor(
+          index: course.colorIndex ?? 0,
+          total: 10,
+        );
+      }
     } else {
-      final colorIndex = viewModel.courseColorMap[course.course] ?? 0;
-      backgroundColor = ColorExtensions.dynamicCourseColor(
-        index: colorIndex,
-        total: 20,
-      );
+      // 优先使用课程自定义颜色，否则使用颜色索引
+      final customColorHex = viewModel.courseCustomColorMap[course.course];
+      if (customColorHex != null) {
+        backgroundColor = _hexToColor(customColorHex);
+      } else {
+        final colorIndex = viewModel.courseColorMap[course.course] ?? 0;
+        print('课程块显示 - 课程名：${course.course}, colorIndex: $colorIndex, courseColorMap: ${viewModel.courseColorMap}');
+        backgroundColor = CourseColors.dynamicCourseColor(
+          index: colorIndex,
+          total: 20,
+        );
+      }
     }
 
     // 2. 基础文字颜色逻辑：
@@ -249,5 +261,14 @@ class CourseBlock extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Hex 颜色字符串转 Color
+  Color _hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex'; // 添加 alpha 通道
+    }
+    return Color(int.parse(hex, radix: 16));
   }
 }

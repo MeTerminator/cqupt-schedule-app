@@ -18,6 +18,17 @@ class ColorExtensions {
     final hue = (index * goldenRatio) % 1.0;
     return HSVColor.fromAHSV(1.0, hue * 360, 0.65, 0.75).toColor();
   }
+
+  static List<Color> generateHSLColorPalette(int count) {
+    if (count <= 0) return [];
+    
+    final colors = <Color>[];
+    for (int i = 0; i < count; i++) {
+      final hue = i / count;
+      colors.add(HSVColor.fromAHSV(1.0, hue * 360, 0.7, 0.6).toColor());
+    }
+    return colors;
+  }
 }
 
 extension DateTimeExtension on DateTime {

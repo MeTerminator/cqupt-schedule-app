@@ -14,7 +14,8 @@ class ScheduleViewModel extends ChangeNotifier {
   bool isLoading = false;
   int selectedWeek = 1;
   String currentId = "";
-  Map<String, int> courseColorMap = {};
+  Map<String, int> courseColorMap = {}; // 课程颜色索引映射
+  Map<String, String> courseCustomColorMap = {}; // 课程自定义颜色 Hex 映射
 
   String toastMessage = "";
   bool showToast = false;
@@ -27,6 +28,8 @@ class ScheduleViewModel extends ChangeNotifier {
 
   static const String kCustomCoursesKey = "cloud_custom_courses";
   static const String kSavedIdKey = "saved_id";
+  static const String kCourseColorMapKey = "course_color_map";
+  static const String kCourseCustomColorMapKey = "course_custom_color_map";
 
   ScheduleViewModel() {
     _refreshTimer = Timer.periodic(
@@ -196,12 +199,13 @@ class ScheduleViewModel extends ChangeNotifier {
 
   Future<void> startup(String studentId) async {
     currentId = studentId;
+    await loadColorMap();
     await loadFromCache(isInitial: true);
     await WidgetService.syncToWidget(this);
     refreshData(silent: true);
   }
 
-  void generateColorMap() {
+  void generateColorMap({bool forceGenerate = false}) {
     final instances = scheduleData?.instances;
     if (instances == null) return;
 
@@ -213,11 +217,94 @@ class ScheduleViewModel extends ChangeNotifier {
             .toList()
           ..sort();
 
-    courseColorMap.clear();
-    for (int i = 0; i < names.length; i++) {
-      courseColorMap[names[i]] = i;
+    if (!forceGenerate && courseColorMap.isNotEmpty) {
+      for (var name in names) {
+        if (!courseColorMap.containsKey(name)) {
+          courseColorMap[name] = courseColorMap.length;
+        }
+      }
+    } else {
+      courseColorMap.clear();
+      for (int i = 0; i < names.length; i++) {
+        courseColorMap[names[i]] = i;
+      }
     }
     notifyListeners();
+    _saveColorMap();
+  }
+
+  void updateCourseColor(String courseName, int colorIndex) {
+    courseColorMap[courseName] = colorIndex;
+    notifyListeners();
+    _saveColorMap();
+  }
+
+  void updateCourseCustomColor(String courseName, String? customColorHex) {
+    if (customColorHex != null) {
+      courseCustomColorMap[courseName] = customColorHex;
+    } else {
+      courseCustomColorMap.remove(courseName);
+    }
+    notifyListeners();
+    _saveCustomColorMap();
+  }
+
+  Future<void> _saveColorMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String data = jsonEncode(courseColorMap);
+    await prefs.setString(kCourseColorMapKey, data);
+  }
+
+  Future<void> _saveCustomColorMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String data = jsonEncode(courseCustomColorMap);
+    await prefs.setString(kCourseCustomColorMapKey, data);
+  }
+
+  Future<void> loadColorMap() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString(kCourseColorMapKey);
+    if (data != null) {
+      final Map<String, dynamic> jsonMap = jsonDecode(data);
+      courseColorMap = jsonMap.map((key, value) => MapEntry(key, value as int));
+      notifyListeners();
+    }
+    
+    // 加载自定义颜色映射
+    final String? customData = prefs.getString(kCourseCustomColorMapKey);
+    if (customData != null) {
+      final Map<String, dynamic> jsonMap = jsonDecode(customData);
+      courseCustomColorMap = jsonMap.map((key, value) => MapEntry(key, value as String));
+      notifyListeners();
+    }
+  }
+
+  List<String> getAllCourseNames() {
+    final instances = scheduleData?.instances;
+    if (instances == null) return [];
+
+    return instances
+        .where((e) => !e.type.contains("考试"))
+        .map((e) => e.course)
+        .toSet()
+        .toList()
+      ..sort();
+  }
+
+  List<MapEntry<String, int>> getAllCourseColors() {
+    final names = getAllCourseNames();
+    final customColors = customCourses.map((e) => e.colorIndex).toSet();
+    
+    final allColors = <int>{};
+    for (var entry in courseColorMap.entries) {
+      allColors.add(entry.value);
+    }
+    allColors.addAll(customColors);
+
+    return names.map((name) {
+      final colorIndex = courseColorMap[name] ?? 0;
+      return MapEntry(name, colorIndex);
+    }).toList();
   }
 
   Future<void> refreshData({bool silent = false}) async {
