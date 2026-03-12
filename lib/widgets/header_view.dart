@@ -27,13 +27,13 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
     final w = week.round();
     if (w == 0) return '开学准备';
     if (w < 0) return '未开学';
-    return '第${w}周';
+    return '第$w周';
   }
 
   @override
   Widget build(BuildContext context) {
     final realWeek = widget.viewModel.calculateCurrentRealWeek();
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -54,10 +54,7 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
           const SizedBox(height: 24),
           Text(
             '选择周数',
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 32),
           Row(
@@ -69,8 +66,9 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color: widget.viewModel.headerTextColor?.withOpacity(0.1) ?? 
-                         Colors.orange.withOpacity(0.1),
+                  color:
+                      widget.viewModel.headerTextColor?.withOpacity(0.1) ??
+                      Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -90,20 +88,14 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
               Expanded(
                 child: Text(
                   '第 0 周',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ),
               Expanded(
                 child: Text(
                   '第 20 周',
                   textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
               ),
             ],
@@ -132,18 +124,11 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.info_outline,
-                size: 16,
-                color: Colors.grey[600],
-              ),
+              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
               const SizedBox(width: 8),
               Text(
-                '当前实际周数：第${realWeek}周',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                '当前实际周数：第$realWeek周',
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
             ],
           ),
