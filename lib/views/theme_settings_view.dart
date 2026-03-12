@@ -253,7 +253,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                 ? ThemeColorUtils.hexToColor(_currentTheme.backgroundColorHex!)
                 : Colors.white,
             onColorSelected: (color) {
-              Navigator.pop(context); // 先关闭颜色选择器
               _updateAndSaveTheme(
                 _currentTheme.copyWith(
                   backgroundColorHex: ThemeColorUtils.colorToHex(color),
@@ -363,7 +362,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                 ? ThemeColorUtils.hexToColor(colorHex)
                 : Colors.white,
             onColorSelected: (color) {
-              Navigator.pop(context); // 先关闭颜色选择器
               onColorSelected(ThemeColorUtils.colorToHex(color));
             },
           ),
@@ -498,7 +496,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                   )
                 : Colors.white,
             onColorSelected: (color) {
-              Navigator.pop(context);
               _updateAndSaveTheme(
                 _currentTheme.copyWith(
                   headerBackgroundColorHex: ThemeColorUtils.colorToHex(color),
