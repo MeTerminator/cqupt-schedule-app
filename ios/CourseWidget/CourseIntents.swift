@@ -59,7 +59,7 @@ struct CheckCourseIntent: AppIntent {
             let speech = "还剩\(formatTimeLeft(timeUntil))，地点\(formatLocation(course.location))，\(course.course)，教师\(course.teacher ?? "无")。"
             return .result(value: speech, dialog: IntentDialog(stringLiteral: speech))
         } else {
-            return .result(value: "没课了", dialog: IntentDialog("你今天已经没有课程安排了。"))
+            return .result(value: "今日课程已结束", dialog: IntentDialog("你今天已经没有课程安排了。"))
         }
     }
 
@@ -74,11 +74,10 @@ struct CourseShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: CheckCourseIntent(),
             phrases: [
-                "用 \(.applicationName) 查看课程",
-                "在 \(.applicationName) 查课表",
                 "查 \(.applicationName) ",
                 "查询 \(.applicationName) ",
                 "查看 \(.applicationName) ",
+                "检查 \(.applicationName) ",
             ],
             shortTitle: "查询课表",
             systemImageName: "calendar"
