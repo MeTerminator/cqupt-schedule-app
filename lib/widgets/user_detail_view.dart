@@ -112,8 +112,8 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       ]),
                       const SizedBox(height: 16),
 
-                      // 3. 行程管理
-                      _buildSection(context, '行程管理', [
+                      // 3. 课程设置
+                      _buildSection(context, '课程设置', [
                         ListTile(
                           leading: const Icon(Icons.list_alt),
                           title: const Text('自定义行程'),

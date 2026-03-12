@@ -79,4 +79,13 @@ class CourseColors {
       (b1 - b2) * (b1 - b2),
     );
   }
+
+  /// Hex 颜色字符串转 Color
+  static Color hexToColor(String hex) {
+    hex = hex.replaceAll('#', '');
+    if (hex.length == 6) {
+      hex = 'FF$hex'; // 添加 alpha 通道
+    }
+    return Color(int.parse(hex, radix: 16));
+  }
 }

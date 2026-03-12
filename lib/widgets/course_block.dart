@@ -34,7 +34,7 @@ class CourseBlock extends StatelessWidget {
     } else if (isCustom) {
       // 自定义行程：优先使用 customColorHex，否则使用 colorIndex
       if (course.customColorHex != null) {
-        backgroundColor = _hexToColor(course.customColorHex!);
+        backgroundColor = CourseColors.hexToColor(course.customColorHex!);
       } else {
         backgroundColor = CourseColors.dynamicCourseColor(
           index: course.colorIndex ?? 0,
@@ -45,7 +45,7 @@ class CourseBlock extends StatelessWidget {
       // 优先使用课程自定义颜色，否则使用颜色索引
       final customColorHex = viewModel.courseCustomColorMap[course.course];
       if (customColorHex != null) {
-        backgroundColor = _hexToColor(customColorHex);
+        backgroundColor = CourseColors.hexToColor(customColorHex);
       } else {
         final colorIndex = viewModel.courseColorMap[course.course] ?? 0;
         backgroundColor = CourseColors.dynamicCourseColor(
@@ -260,14 +260,5 @@ class CourseBlock extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  /// Hex 颜色字符串转 Color
-  Color _hexToColor(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) {
-      hex = 'FF$hex'; // 添加 alpha 通道
-    }
-    return Color(int.parse(hex, radix: 16));
   }
 }

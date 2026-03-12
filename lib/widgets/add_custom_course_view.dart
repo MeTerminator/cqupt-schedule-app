@@ -47,7 +47,7 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
       
       // 恢复颜色：优先使用自定义颜色 Hex 值
       if (course.customColorHex != null) {
-        _customColor = _hexToColor(course.customColorHex!);
+        _customColor = CourseColors.hexToColor(course.customColorHex!);
       } else {
         // 如果没有自定义颜色，使用 colorIndex 生成一个默认颜色
         _customColor = CourseColors.dynamicCourseColor(
@@ -72,14 +72,6 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
   String getChineseDay(int day) {
     const days = ['一', '二', '三', '四', '五', '六', '日'];
     return (day >= 1 && day <= 7) ? days[day - 1] : '';
-  }
-
-  Color _hexToColor(String hex) {
-    hex = hex.replaceAll('#', '');
-    if (hex.length == 6) {
-      hex = 'FF' + hex;
-    }
-    return Color(int.parse(hex, radix: 16));
   }
 
   void _toggleWeek(int week) {
