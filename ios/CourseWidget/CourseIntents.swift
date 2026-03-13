@@ -45,6 +45,18 @@ struct CheckCourseIntent: AppIntent {
             return "\(mins)分钟"
         }
 
+        // 时间转中文播报函数
+        func formatTimeToSpeech(_ timeString: String) -> String {
+            let parts = timeString.split(separator: ":")
+            guard parts.count >= 2,
+                let hour = Int(parts[0]),
+                let minute = Int(parts[1])
+            else { return timeString }
+
+            let minuteStr = minute == 0 ? "整" : "\(minute)分"
+            return "\(hour)点\(minuteStr)"
+        }
+
         // 1. 查找正在进行的课程
         let ongoing = todayCourses.first {
             timeToMin($0.start_time) <= currentMinutes && timeToMin($0.end_time) > currentMinutes
@@ -59,19 +71,16 @@ struct CheckCourseIntent: AppIntent {
         // 场景 A: 正在上课
         if let course = ongoing {
             let timeLeft = timeToMin(course.end_time) - currentMinutes
-            // var speech = "还剩\(formatTimeLeft(timeLeft))下课，地点\(formatLocation(course.location))，\(course.course)，教师\(course.teacher ?? "无")。"
+            // var speech = "还剩\(formatTimeLeft(timeLeft))下课，地点 \(formatLocation(course.location))，\(course.course)，教师 \(course.teacher ?? "未知")。"
             var speech = "还剩\(formatTimeLeft(timeLeft))下课"
 
-            // 如果还有下节课，追加在后面
             if let nextCourse = upcoming {
-                let timeUntil = timeToMin(nextCourse.start_time) - currentMinutes
-                // speech += " 下节课是\(nextCourse.course)，还剩\(formatTimeLeft(timeUntil))上课，地点\(formatLocation(nextCourse.location))，教师\(nextCourse.teacher ?? "无")。"
+                // 使用新函数播报时间
                 speech +=
-                    " 下节课是\(nextCourse.course)，地点\(formatLocation(nextCourse.location))，教师\(nextCourse.teacher ?? "无")。"
+                    "，下节课是 \(nextCourse.course)，上课时间 \(formatTimeToSpeech(nextCourse.start_time))，地点 \(formatLocation(nextCourse.location))，教师 \(nextCourse.teacher ?? "未知")。"
             } else {
-                speech += "，无下节课。"
+                speech += "，没有下节课了。"
             }
-
             return .result(value: speech, dialog: IntentDialog(stringLiteral: speech))
         }
 

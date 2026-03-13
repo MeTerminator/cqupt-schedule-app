@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import 'dart:io';
 import '../view_models/schedule_view_model.dart';
@@ -293,21 +294,38 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
     );
   }
 
+  // 将存储的文件名转换为真实的 File 对象
+  Future<File?> _getImageFile(String? fileName) async {
+    if (fileName == null || fileName.isEmpty) return null;
+    final appDir = await getApplicationDocumentsDirectory();
+    final file = File('${appDir.path}/$fileName');
+    return await file.exists() ? file : null;
+  }
+
   Widget _buildImageSelector(BuildContext context) {
     return Column(
       children: [
+        // 使用 FutureBuilder 异步加载文件，防止路径变化导致无法显示
         if (_currentTheme.backgroundImagePath != null)
-          Container(
-            margin: const EdgeInsets.only(bottom: 12),
-            height: 150,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              image: DecorationImage(
-                image: FileImage(File(_currentTheme.backgroundImagePath!)),
-                fit: BoxFit.cover,
-              ),
-            ),
+          FutureBuilder<File?>(
+            future: _getImageFile(_currentTheme.backgroundImagePath!),
+            builder: (context, snapshot) {
+              if (snapshot.hasData && snapshot.data != null) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  height: 150,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    image: DecorationImage(
+                      image: FileImage(snapshot.data!),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                );
+              }
+              return const SizedBox.shrink();
+            },
           ),
         Row(
           children: [
@@ -318,8 +336,15 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                     source: ImageSource.gallery,
                   );
                   if (image != null) {
+                    final appDir = await getApplicationDocumentsDirectory();
+                    final fileName =
+                        'user_bg_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                    // 复制到文档目录
+                    await File(image.path).copy('${appDir.path}/$fileName');
+
+                    // 只保存文件名
                     _updateAndSaveTheme(
-                      _currentTheme.copyWith(backgroundImagePath: image.path),
+                      _currentTheme.copyWith(backgroundImagePath: fileName),
                     );
                   }
                 },
@@ -327,29 +352,6 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                 label: const Text('从相册选择'),
               ),
             ),
-            // 修改后的删除按钮部分
-            if (_currentTheme.backgroundImagePath != null) ...[
-              const SizedBox(width: 12),
-              // 包裹在 Material 中，并给予足够的 InkWell 区域
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(20),
-                  onTap: () {
-                    // 使用 setState 确保 UI 更新
-                    setState(() {
-                      _updateAndSaveTheme(
-                        _currentTheme.copyWith(backgroundImagePath: null),
-                      );
-                    });
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Icon(Icons.clear, color: Colors.red),
-                  ),
-                ),
-              ),
-            ],
           ],
         ),
       ],

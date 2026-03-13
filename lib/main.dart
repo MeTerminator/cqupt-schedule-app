@@ -11,6 +11,7 @@ import 'widgets/course_detail_view.dart';
 import 'widgets/user_detail_view.dart';
 import 'widgets/toast_view.dart';
 import 'models/theme_model.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -152,18 +153,24 @@ class MainHomeView extends StatefulWidget {
 class _MainHomeViewState extends State<MainHomeView> {
   late PageController _pageController;
 
-  Decoration? _buildBackgroundDecoration(ScheduleViewModel viewModel) {
+  Future<Decoration?> _buildBackgroundDecoration(
+    ScheduleViewModel viewModel,
+  ) async {
     final backgroundType = viewModel.backgroundType;
     final backgroundColor = viewModel.backgroundColor;
     final backgroundImagePath = viewModel.backgroundImagePath;
 
     if (backgroundType == BackgroundType.image && backgroundImagePath != null) {
-      return BoxDecoration(
-        image: DecorationImage(
-          image: FileImage(File(backgroundImagePath)),
-          fit: BoxFit.cover,
-        ),
-      );
+      // 获取当前最新的文档目录路径
+      final appDir = await getApplicationDocumentsDirectory();
+      // 拼接路径：只需文件名即可，因为我们之前存储的是文件名
+      final file = File('${appDir.path}/$backgroundImagePath');
+
+      if (await file.exists()) {
+        return BoxDecoration(
+          image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
+        );
+      }
     } else if (backgroundColor != null) {
       return BoxDecoration(color: backgroundColor);
     }
@@ -210,75 +217,86 @@ class _MainHomeViewState extends State<MainHomeView> {
   Widget build(BuildContext context) {
     return Consumer<ScheduleViewModel>(
       builder: (context, viewModel, child) {
+        // 1. 处理 PageView 跳转逻辑
         if (_pageController.hasClients &&
             _pageController.page?.round() != viewModel.selectedWeek) {
           Future.microtask(() {
             if (viewModel.shouldAnimateToWeek) {
-              // 用户点击返回当周按钮时使用动画
               _pageController.animateToPage(
                 viewModel.selectedWeek,
                 duration: const Duration(milliseconds: 600),
                 curve: Curves.easeInOut,
               );
-              // 重置标志位
               viewModel.shouldAnimateToWeek = false;
             } else {
-              // 初始加载或其他情况不使用动画
               _pageController.jumpToPage(viewModel.selectedWeek);
             }
           });
         }
 
-        return Stack(
-          children: [
-            Scaffold(
-              body: Container(
-                decoration: _buildBackgroundDecoration(viewModel),
-                child: Column(
-                  children: [
-                    HeaderView(
-                      viewModel: viewModel,
-                      onUserTap: () => _showUserSheet(context),
+        // 2. 异步获取背景 Decoration
+        return FutureBuilder<Decoration?>(
+          future: _buildBackgroundDecoration(viewModel),
+          builder: (context, snapshot) {
+            final decoration = snapshot.data;
+
+            return Stack(
+              children: [
+                Scaffold(
+                  // 如果有背景图片，设置背景为透明以显示 Container 里的图片
+                  backgroundColor: decoration != null
+                      ? Colors.transparent
+                      : null,
+                  body: Container(
+                    decoration: decoration,
+                    child: Column(
+                      children: [
+                        HeaderView(
+                          viewModel: viewModel,
+                          onUserTap: () => _showUserSheet(context),
+                        ),
+                        Expanded(
+                          child: PageView.builder(
+                            controller: _pageController,
+                            itemCount: 21,
+                            onPageChanged: (index) {
+                              viewModel.selectedWeek = index;
+                              viewModel.notifyListeners();
+                            },
+                            itemBuilder: (context, index) {
+                              return ScheduleGrid(
+                                viewModel: viewModel,
+                                weekToShow: index,
+                                onCourseTap: (course) =>
+                                    _showCourseDetail(context, course),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: 21,
-                        onPageChanged: (index) {
-                          viewModel.selectedWeek = index;
-                          viewModel.notifyListeners();
-                        },
-                        itemBuilder: (context, index) {
-                          return ScheduleGrid(
-                            viewModel: viewModel,
-                            weekToShow: index,
-                            onCourseTap: (course) =>
-                                _showCourseDetail(context, course),
-                          );
-                        },
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            if (viewModel.showToast)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: AnimatedSlide(
-                  offset: viewModel.showToast
-                      ? Offset.zero
-                      : const Offset(0, -1),
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeOut,
-                  child: Center(
-                    child: ToastView(message: viewModel.toastMessage),
                   ),
                 ),
-              ),
-          ],
+                // 3. Toast 提示层
+                if (viewModel.showToast)
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedSlide(
+                      offset: viewModel.showToast
+                          ? Offset.zero
+                          : const Offset(0, -1),
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                      child: Center(
+                        child: ToastView(message: viewModel.toastMessage),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
