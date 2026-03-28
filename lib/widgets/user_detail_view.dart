@@ -4,6 +4,7 @@ import 'calendar_export_view.dart';
 import '../views/course_color_management_view.dart';
 import '../views/custom_courses_view.dart';
 import '../views/theme_settings_view.dart';
+import '../views/desktop_widget_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -113,8 +114,8 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       ]),
                       const SizedBox(height: 16),
 
-                      // 3. 课程设置
-                      _buildSection(context, '课程设置', [
+                      // 3. 课表设置
+                      _buildSection(context, '课表设置', [
                         ListTile(
                           leading: const Icon(Icons.list_alt),
                           title: const Text('自定义行程'),
@@ -153,7 +154,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ThemeSettingsView(),
+                                builder: (context) => const ThemeSettingsView(),
                               ),
                             ).then((_) => setState(() {}));
                           },
@@ -166,6 +167,27 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                         _buildSyncCalendarRow(context),
                       ]),
                       const SizedBox(height: 24),
+
+                      // 5. 更多功能
+                      _buildSection(context, '更多功能', [
+                        ListTile(
+                          leading: const Icon(Icons.monitor),
+                          title: const Text('桌面摆件'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder:
+                                    (context) => DesktopWidgetView(
+                                      studentId: widget.viewModel.currentId,
+                                    ),
+                              ),
+                            ).then((_) => setState(() {}));
+                          },
+                        ),
+                      ]),
+                      const SizedBox(height: 16),
 
                       // 5. 退出登录
                       SizedBox(
