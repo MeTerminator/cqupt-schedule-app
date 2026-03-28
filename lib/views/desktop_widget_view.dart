@@ -109,8 +109,8 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _buildClock(fontSize: 90),
-              const SizedBox(height: 8),
+              _buildClock(fontSize: 100),
+              const SizedBox(height: 2),
               _buildWeather(vm),
               const SizedBox(height: 16),
               _buildCurriculumHeader(svm),
@@ -208,7 +208,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
             _weatherText("${data['humidity_float'] ?? "-"}%"),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -226,8 +226,8 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       text,
       style: const TextStyle(
         color: Colors.white,
-        fontSize: 18,
-        fontWeight: FontWeight.w500,
+        fontSize: 20,
+        fontWeight: FontWeight.bold,
       ),
     );
   }
@@ -270,7 +270,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white, width: 2),
+          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
         ),
         child: const Text(
           "今日及明日无课",
@@ -295,7 +295,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -363,7 +363,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white, width: 2),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -408,7 +408,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       height: 12,
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white, width: 1),
+        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,
