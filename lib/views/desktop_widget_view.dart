@@ -96,11 +96,13 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalHeight = constraints.maxHeight;
-        // 估算固定占用空间：Clock(120), Weather(60), Header(40), TopCard(140), Margins/Padding(80)
-        // 实际占用随屏幕大小略有波动，这里采取保守估算
-        final fixedHeight = 110 + 60 + 40 + 130 + 40;
+        // 增加保守冗余，防止大圆角手机底部溢出
+        // 估算固定占用空间：Clock, Weather, Header, TopCard, 边距
+        // 约为 110 + 60 + 40 + 140 + 50 = 400
+        final fixedHeight = 400.0;
         final availableHeight = totalHeight - fixedHeight;
-        final itemsToTake = (availableHeight / 85).floor().clamp(0, list.length);
+        // 每项高度估算约为 82，确保在主流手机上能显示约 5 节课
+        final itemsToTake = (availableHeight / 82).floor().clamp(0, list.length);
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -110,7 +112,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
               _buildClock(fontSize: 90),
               const SizedBox(height: 8),
               _buildWeather(vm),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               _buildCurriculumHeader(svm),
               const SizedBox(height: 8),
               _buildTopCard(vm, svm, top),
@@ -130,10 +132,10 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
     return LayoutBuilder(
       builder: (context, constraints) {
         final totalHeight = constraints.maxHeight;
-        // 估算固定占用空间：Header(40), TopCard(140), Margins/Padding(40)
-        final fixedHeight = 40 + 130 + 40;
+        // 横屏模式估算：Header(40) + TopCard(140) + Padding(50) = 230
+        final fixedHeight = 200.0;
         final availableHeight = totalHeight - fixedHeight;
-        final itemsToTake = (availableHeight / 85).floor().clamp(0, list.length);
+        final itemsToTake = (availableHeight / 82).floor().clamp(0, list.length);
 
         return Padding(
           padding: const EdgeInsets.all(24.0),
