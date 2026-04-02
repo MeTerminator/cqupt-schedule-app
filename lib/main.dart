@@ -161,18 +161,28 @@ class _MainHomeViewState extends State<MainHomeView> {
     final backgroundColor = viewModel.backgroundColor;
     final backgroundImagePath = viewModel.backgroundImagePath;
 
-    if (!kIsWeb &&
-        backgroundType == BackgroundType.image &&
-        backgroundImagePath != null) {
-      // 获取当前最新的文档目录路径
-      final appDir = await getApplicationDocumentsDirectory();
-      // 拼接路径：只需文件名即可，因为我们之前存储的是文件名
-      final file = File('${appDir.path}/$backgroundImagePath');
+    if (backgroundType == BackgroundType.image && backgroundImagePath != null) {
+      if (kIsWeb) {
+        // Web 平台：从内存字节加载
+        final bytes = viewModel.backgroundImageBytes;
+        if (bytes != null) {
+          return BoxDecoration(
+            image: DecorationImage(
+              image: MemoryImage(bytes),
+              fit: BoxFit.cover,
+            ),
+          );
+        }
+      } else {
+        // 原生平台：从文件系统加载
+        final appDir = await getApplicationDocumentsDirectory();
+        final file = File('${appDir.path}/$backgroundImagePath');
 
-      if (await file.exists()) {
-        return BoxDecoration(
-          image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
-        );
+        if (await file.exists()) {
+          return BoxDecoration(
+            image: DecorationImage(image: FileImage(file), fit: BoxFit.cover),
+          );
+        }
       }
     } else if (backgroundColor != null) {
       return BoxDecoration(color: backgroundColor);

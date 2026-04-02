@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
@@ -294,9 +295,9 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
     );
   }
 
-  // 将存储的文件名转换为真实的 File 对象
+  // 将存储的文件名转换为真实的 File 对象（仅原生平台）
   Future<File?> _getImageFile(String? fileName) async {
-    if (fileName == null || fileName.isEmpty) return null;
+    if (kIsWeb || fileName == null || fileName.isEmpty) return null;
     final appDir = await getApplicationDocumentsDirectory();
     final file = File('${appDir.path}/$fileName');
     return await file.exists() ? file : null;
@@ -307,26 +308,47 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
       children: [
         // 使用 FutureBuilder 异步加载文件，防止路径变化导致无法显示
         if (_currentTheme.backgroundImagePath != null)
-          FutureBuilder<File?>(
-            future: _getImageFile(_currentTheme.backgroundImagePath!),
-            builder: (context, snapshot) {
-              if (snapshot.hasData && snapshot.data != null) {
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  height: 150,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    image: DecorationImage(
-                      image: FileImage(snapshot.data!),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                );
-              }
-              return const SizedBox.shrink();
-            },
-          ),
+          kIsWeb
+              ? Builder(
+                  builder: (context) {
+                    final bytes = widget.viewModel.backgroundImageBytes;
+                    if (bytes != null) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        height: 150,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: MemoryImage(bytes),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                )
+              : FutureBuilder<File?>(
+                  future: _getImageFile(_currentTheme.backgroundImagePath!),
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData && snapshot.data != null) {
+                      return Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        height: 150,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          image: DecorationImage(
+                            image: FileImage(snapshot.data!),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  },
+                ),
         Row(
           children: [
             Expanded(
@@ -336,16 +358,29 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
                     source: ImageSource.gallery,
                   );
                   if (image != null) {
-                    final appDir = await getApplicationDocumentsDirectory();
-                    final fileName =
-                        'user_bg_${DateTime.now().millisecondsSinceEpoch}.jpg';
-                    // 复制到文档目录
-                    await File(image.path).copy('${appDir.path}/$fileName');
-
-                    // 只保存文件名
-                    _updateAndSaveTheme(
-                      _currentTheme.copyWith(backgroundImagePath: fileName),
-                    );
+                    if (kIsWeb) {
+                      // Web 平台：读取字节并保存为 base64
+                      final bytes = await image.readAsBytes();
+                      await widget.viewModel.saveWebBackgroundImage(bytes);
+                      _updateAndSaveTheme(
+                        _currentTheme.copyWith(
+                          backgroundImagePath: 'web_base64',
+                        ),
+                      );
+                    } else {
+                      // 原生平台：复制到文档目录
+                      final appDir =
+                          await getApplicationDocumentsDirectory();
+                      final fileName =
+                          'user_bg_${DateTime.now().millisecondsSinceEpoch}.jpg';
+                      await File(image.path)
+                          .copy('${appDir.path}/$fileName');
+                      _updateAndSaveTheme(
+                        _currentTheme.copyWith(
+                          backgroundImagePath: fileName,
+                        ),
+                      );
+                    }
                   }
                 },
                 icon: const Icon(Icons.photo_library),
@@ -583,6 +618,9 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
 
   void _resetToDefault() {
     _updateAndSaveTheme(ThemeSettings.defaultTheme());
+    if (kIsWeb) {
+      widget.viewModel.clearWebBackgroundImage();
+    }
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('已重置为默认主题')));

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -34,6 +35,9 @@ class ScheduleViewModel extends ChangeNotifier {
   static const String kCourseColorMapKey = "course_color_map";
   static const String kCourseCustomColorMapKey = "course_custom_color_map";
   static const String kThemeSettingsKey = "theme_settings";
+  static const String kWebBackgroundImageKey = "web_background_image_base64";
+
+  Uint8List? _webBackgroundImageBytes; // Web 平台背景图字节缓存
 
   ScheduleViewModel() {
     _refreshTimer = Timer.periodic(
@@ -205,7 +209,9 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> startup(String studentId) async {
     currentId = studentId;
     await loadColorMap();
-    if (!kIsWeb) {
+    if (kIsWeb) {
+      await loadWebBackgroundImage();
+    } else {
       await loadFromCache(isInitial: true);
     }
     if (!kIsWeb) {
@@ -629,6 +635,36 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   String? get backgroundImagePath => currentTheme.backgroundImagePath;
+
+  /// Web 平台背景图字节数据
+  Uint8List? get backgroundImageBytes => _webBackgroundImageBytes;
+
+  /// 保存 Web 背景图（base64）
+  Future<void> saveWebBackgroundImage(Uint8List bytes) async {
+    final prefs = await SharedPreferences.getInstance();
+    final base64Str = base64Encode(bytes);
+    await prefs.setString(kWebBackgroundImageKey, base64Str);
+    _webBackgroundImageBytes = bytes;
+    notifyListeners();
+  }
+
+  /// 加载 Web 背景图（base64）
+  Future<void> loadWebBackgroundImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final base64Str = prefs.getString(kWebBackgroundImageKey);
+    if (base64Str != null && base64Str.isNotEmpty) {
+      _webBackgroundImageBytes = base64Decode(base64Str);
+      notifyListeners();
+    }
+  }
+
+  /// 清除 Web 背景图
+  Future<void> clearWebBackgroundImage() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(kWebBackgroundImageKey);
+    _webBackgroundImageBytes = null;
+    notifyListeners();
+  }
 
   BackgroundType get backgroundType => currentTheme.backgroundType;
 
