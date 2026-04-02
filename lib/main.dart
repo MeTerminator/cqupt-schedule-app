@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'view_models/schedule_view_model.dart';
 import 'views/login_view.dart';
@@ -160,7 +161,9 @@ class _MainHomeViewState extends State<MainHomeView> {
     final backgroundColor = viewModel.backgroundColor;
     final backgroundImagePath = viewModel.backgroundImagePath;
 
-    if (backgroundType == BackgroundType.image && backgroundImagePath != null) {
+    if (!kIsWeb &&
+        backgroundType == BackgroundType.image &&
+        backgroundImagePath != null) {
       // 获取当前最新的文档目录路径
       final appDir = await getApplicationDocumentsDirectory();
       // 拼接路径：只需文件名即可，因为我们之前存储的是文件名

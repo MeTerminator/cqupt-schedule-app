@@ -1,11 +1,11 @@
 {
-    "name": "cqupt_schedule_app",
-    "short_name": "cqupt_schedule_app",
+    "name": "重邮课表",
+    "short_name": "重邮课表",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "CQUPT Schedule App - 重庆邮电大学课表查询工具",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -204,8 +205,12 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> startup(String studentId) async {
     currentId = studentId;
     await loadColorMap();
-    await loadFromCache(isInitial: true);
-    await WidgetService.syncToWidget(this);
+    if (!kIsWeb) {
+      await loadFromCache(isInitial: true);
+    }
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
     refreshData(silent: true);
   }
 
@@ -336,7 +341,9 @@ class ScheduleViewModel extends ChangeNotifier {
       if (response.statusCode == 200) {
         final decoded = ScheduleResponse.fromJson(jsonDecode(response.body));
         scheduleData = decoded;
-        await _saveToCache(response.body);
+        if (!kIsWeb) {
+          await _saveToCache(response.body);
+        }
         generateColorMap();
         parseStartDate(autoJump: false);
         if (!silent) {
@@ -347,7 +354,9 @@ class ScheduleViewModel extends ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching data: $e");
     } finally {
-      await WidgetService.syncToWidget(this);
+      if (!kIsWeb) {
+        await WidgetService.syncToWidget(this);
+      }
       if (!silent) {
         isLoading = false;
         notifyListeners();
@@ -435,7 +444,9 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> addCustomCourse(CustomCourse course) async {
     customCourses.add(course);
     await saveCustomCourses();
-    await WidgetService.syncToWidget(this);
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
     triggerToast("行程已添加");
   }
 
@@ -478,7 +489,9 @@ class ScheduleViewModel extends ChangeNotifier {
       customCourses.map((e) => e.toJson()).toList(),
     );
     await prefs.setString(kCustomCoursesKey, data);
-    await WidgetService.syncToWidget(this);
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
   }
 
   Future<void> loadCustomCourses() async {
@@ -489,7 +502,9 @@ class ScheduleViewModel extends ChangeNotifier {
       customCourses = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
       notifyListeners();
     }
-    await WidgetService.syncToWidget(this);
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
   }
 
   List<CourseInstance> allCourses(int week) {
