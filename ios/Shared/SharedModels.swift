@@ -51,6 +51,22 @@ struct WatchCourseInstance: Codable, Identifiable {
         return location
     }
 
+    /// 获取当天的开始 Date
+    func startDate(on date: Date) -> Date? {
+        combine(date: date, timeStr: start_time)
+    }
+
+    /// 获取当天的结束 Date
+    func endDate(on date: Date) -> Date? {
+        combine(date: date, timeStr: end_time)
+    }
+
+    private func combine(date: Date, timeStr: String) -> Date? {
+        let parts = timeStr.split(separator: ":")
+        guard parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) else { return nil }
+        return Calendar.current.date(bySettingHour: h, minute: m, second: 0, of: date)
+    }
+
     private func timeToMin(_ t: String) -> Int {
         let parts = t.split(separator: ":")
         return (Int(parts.first ?? "0") ?? 0) * 60 + (Int(parts.last ?? "0") ?? 0)

@@ -8,66 +8,46 @@ struct WatchRectangularView: View {
 
     var body: some View {
         if let course = entry.topCourse {
-            HStack(alignment: .center, spacing: 6) {
-                // 左侧状态指示
-                VStack(spacing: 0) {
-                    if entry.isOngoing {
-                        // 进行中：微型进度条
-                        ZStack {
-                            Circle()
-                                .stroke(Color.primary.opacity(0.2), lineWidth: 2)
-                                .frame(width: 14, height: 14)
-                            Circle()
-                                .trim(from: 0, to: CGFloat(entry.progress))
-                                .stroke(Color.primary, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                                .frame(width: 14, height: 14)
-                                .rotationEffect(.degrees(-90))
-                        }
-                    } else {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 12))
-                    }
-                }
-
-                // 右侧课程信息
-                VStack(alignment: .leading, spacing: 1) {
-                    // 第一行：状态 + 课程名
-                    HStack(spacing: 3) {
-                        Text(entry.isOngoing ? "正在上" : "下节课")
-                            .font(.system(size: 10))
-                            .opacity(0.7)
-                    }
-
-                    Text(course.course)
-                        .font(.system(size: 14, weight: .bold))
-                        .lineLimit(1)
-
-                    // 地点 + 时间
+            VStack(alignment: .leading, spacing: 2) {
+                // 第一行：倒计时
+                if let targetDate = entry.isOngoing ? course.endDate(on: entry.date) : course.startDate(on: entry.date) {
                     HStack(spacing: 4) {
-                        Text(course.location)
-                            .lineLimit(1)
-                        Text("·")
-                        Text(course.timeRange)
+                        Text(entry.isOngoing ? "离下课" : "离上课")
+                            .font(.system(size: 15))
+                            .opacity(0.8)
+                        
+                        Text(targetDate, style: .timer)
+                            .font(.system(size: 16, weight: .bold))
+                            .monospacedDigit()
+                            .foregroundColor(.blue)
                     }
-                    .font(.system(size: 11))
-                    .opacity(0.8)
                 }
 
-                Spacer(minLength: 0)
+                // 第二行：课程名
+                Text(course.course)
+                    .font(.system(size: 16, weight: .bold))
+                    .lineLimit(1)
+
+                // 第三行：地点
+                Text(course.location)
+                    .font(.system(size: 15))
+                    .lineLimit(1)
+                    .opacity(0.9)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         } else {
-            HStack(spacing: 6) {
-                Image(systemName: "checkmark.circle")
-                    .font(.system(size: 14))
-                VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(.green)
                     Text("近期无课程")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("今日课程已结束")
-                        .font(.system(size: 11))
-                        .opacity(0.7)
+                        .font(.system(size: 16, weight: .bold))
                 }
-                Spacer(minLength: 0)
+                Text("今日课程已全部结束")
+                    .font(.system(size: 14))
+                    .opacity(0.7)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 }
