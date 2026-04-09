@@ -13,29 +13,24 @@ struct CourseRowView: View {
                 // 左侧状态 + 颜色条
                 statusIndicator
 
-                // 课程信息
-                VStack(alignment: .leading, spacing: 2) {
+                // 课程信息 (3行布局)
+                VStack(alignment: .leading, spacing: 1) {
                     Text(course.course)
-                        .font(.system(size: 14, weight: .bold))
+                        .font(.headline)
                         .lineLimit(1)
                         .foregroundColor(statusTextColor)
 
                     Text(course.locationWithTeacher)
-                        .font(.system(size: 11))
+                        .font(.caption)
                         .lineLimit(1)
+                        .foregroundColor(.secondary)
+                    
+                    Text("\(course.start_time) - \(course.end_time)")
+                        .font(.caption2.monospacedDigit())
                         .foregroundColor(.secondary)
                 }
 
                 Spacer(minLength: 0)
-
-                // 右侧时间
-                VStack(alignment: .trailing, spacing: 1) {
-                    Text(course.start_time)
-                        .font(.system(size: 12, weight: .medium, design: .rounded))
-                    Text(course.end_time)
-                        .font(.system(size: 12, design: .rounded))
-                        .foregroundColor(.secondary)
-                }
             }
             .padding(.vertical, 4)
             .padding(.horizontal, 6)
@@ -105,14 +100,14 @@ struct CourseDetailView: View {
                         .fill(statusColor)
                         .frame(width: 8, height: 8)
                     Text(statusText)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.footnote.weight(.medium))
                         .foregroundColor(statusColor)
                 }
                 .padding(.top, 4)
 
                 // 课程名
                 Text(course.course)
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.title3.bold())
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
 
@@ -137,16 +132,16 @@ struct CourseDetailView: View {
     private func detailRow(icon: String, color: Color, label: String, value: String) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
-                .font(.system(size: 12))
+                .font(.footnote)
                 .foregroundColor(color)
                 .frame(width: 16)
 
             VStack(alignment: .leading, spacing: 1) {
                 Text(label)
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(.secondary)
                 Text(value)
-                    .font(.system(size: 14, weight: .medium))
+                    .font(.body.weight(.medium))
                     .lineLimit(2)
             }
 

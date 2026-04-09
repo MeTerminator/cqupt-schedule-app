@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 70;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -156,21 +156,21 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		730A63462F59EF30008F34D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		730A63462F59EF30008F34D5 /* Exceptions for "CourseWidget" folder in "CourseWidget" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 730A632F2F59EF2F008F34D5 /* CourseWidget */;
 		};
-		7328F0C02F8768CD00B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		7328F0C02F8768CD00B2417A /* Exceptions for "CquptScheduleWatch Watch App" folder in "CquptScheduleWatch Watch App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 7328EE102F87374900B2417A /* CquptScheduleWatch Watch App */;
 		};
-		7328F1202F876AD400B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+		7328F1202F876AD400B2417A /* Exceptions for "WatchCourseWidget" folder in "WatchCourseWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -180,9 +180,42 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		730A63352F59EF2F008F34D5 /* CourseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (730A63462F59EF30008F34D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = CourseWidget; sourceTree = "<group>"; };
-		7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (7328F0C02F8768CD00B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "CquptScheduleWatch Watch App"; sourceTree = "<group>"; };
-		7328EE282F87376E00B2417A /* WatchCourseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (7328F1202F876AD400B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = WatchCourseWidget; sourceTree = "<group>"; };
+		730A63352F59EF2F008F34D5 /* CourseWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				730A63462F59EF30008F34D5 /* Exceptions for "CourseWidget" folder in "CourseWidget" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = CourseWidget;
+			sourceTree = "<group>";
+		};
+		7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7328F0C02F8768CD00B2417A /* Exceptions for "CquptScheduleWatch Watch App" folder in "CquptScheduleWatch Watch App" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = "CquptScheduleWatch Watch App";
+			sourceTree = "<group>";
+		};
+		7328EE282F87376E00B2417A /* WatchCourseWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				7328F1202F876AD400B2417A /* Exceptions for "WatchCourseWidget" folder in "WatchCourseWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = WatchCourseWidget;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -605,13 +638,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Copy Pods Resources";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -641,13 +670,9 @@
 			inputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
-			inputPaths = (
-			);
 			name = "[CP] Embed Pods Frameworks";
 			outputFileListPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-Runner/Pods-Runner-frameworks-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;

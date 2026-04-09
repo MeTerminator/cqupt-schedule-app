@@ -76,20 +76,20 @@ struct CourseListView: View {
         VStack(alignment: .leading, spacing: 2) {
             HStack {
                 Text(title)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(.headline)
                     .foregroundColor(.primary)
                 Spacer()
                 Text("第\(week)周")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.footnote.weight(.medium))
                     .foregroundColor(.blue)
             }
             HStack {
                 Text(dateStr)
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundColor(.secondary)
                 Spacer()
                 Text("\(count)节课")
-                    .font(.system(size: 11))
+                    .font(.caption)
                     .foregroundColor(.secondary)
             }
         }
@@ -104,9 +104,9 @@ struct CourseListView: View {
                 .font(.system(size: 32))
                 .foregroundColor(.yellow)
             Text("今日已无课程")
-                .font(.system(size: 15, weight: .semibold))
+                .font(.headline)
             Text("享受自由时光 🎉")
-                .font(.system(size: 12))
+                .font(.body)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -118,9 +118,9 @@ struct CourseListView: View {
                 .font(.system(size: 28))
                 .foregroundColor(.gray)
             Text("暂无课表数据")
-                .font(.system(size: 14, weight: .semibold))
+                .font(.headline)
             Text("请在 iPhone 上\n打开重邮课表同步数据")
-                .font(.system(size: 12))
+                .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }

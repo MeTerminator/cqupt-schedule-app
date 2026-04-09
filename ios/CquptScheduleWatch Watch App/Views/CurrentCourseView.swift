@@ -86,10 +86,10 @@ struct CurrentCourseView: View {
 
                 VStack(spacing: 0) {
                     Text("\(max(remaining, 0))")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.title3.bold().monospacedDigit())
                         .foregroundColor(.green)
                     Text("分钟")
-                        .font(.system(size: 8))
+                        .font(.caption2)
                         .foregroundColor(.secondary)
                 }
             }
@@ -99,12 +99,11 @@ struct CurrentCourseView: View {
             if let target = SharedDataProvider.countdownTarget(for: course, isOngoing: false, at: now, response: schedule) {
                 VStack(spacing: 2) {
                     Image(systemName: "clock.badge")
-                        .font(.system(size: 14))
+                        .font(.footnote)
                         .foregroundColor(.orange)
 
                     Text(target, style: .timer)
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .monospacedDigit()
+                        .font(.headline.bold().monospacedDigit())
                         .foregroundColor(.orange)
                         .multilineTextAlignment(.center)
                         .frame(width: 60)
@@ -127,34 +126,48 @@ struct CurrentCourseView: View {
                     .fill(isOngoing ? Color.green : Color.orange)
                     .frame(width: 5, height: 5)
                 Text(isOngoing ? "进行中" : "即将开始")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundColor(isOngoing ? .green : .orange)
             }
 
             // 课程名称
             Text(course.course)
-                .font(.system(size: 15, weight: .bold))
+                .font(.headline)
                 .lineLimit(2)
 
             // 地点
             HStack(spacing: 3) {
                 Image(systemName: "mappin.circle.fill")
-                    .font(.system(size: 10))
+                    .font(.caption2)
                     .foregroundColor(.blue)
                 Text(course.location)
-                    .font(.system(size: 11))
+                    .font(.caption2)
                     .lineLimit(1)
                     .foregroundColor(.secondary)
             }
 
-            // 时间
-            HStack(spacing: 3) {
-                Image(systemName: "clock.fill")
-                    .font(.system(size: 10))
-                    .foregroundColor(.purple)
-                Text(course.timeRange)
-                    .font(.system(size: 11, design: .rounded))
-                    .foregroundColor(.secondary)
+            // 时间 (Timeline 风格)
+            HStack(spacing: 6) {
+                VStack(spacing: 0) {
+                    Circle()
+                        .fill(isOngoing ? Color.green : Color.purple)
+                        .frame(width: 4, height: 4)
+                    Rectangle()
+                        .fill(Color.secondary.opacity(0.3))
+                        .frame(width: 1, height: 10)
+                    Circle()
+                        .stroke(Color.secondary.opacity(0.5), lineWidth: 1)
+                        .frame(width: 4, height: 4)
+                }
+                .padding(.vertical, 2)
+                
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(course.start_time)
+                        .font(.caption2.monospacedDigit())
+                    Text(course.end_time)
+                        .font(.caption2.monospacedDigit())
+                }
+                .foregroundColor(.secondary)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -166,11 +179,11 @@ struct CurrentCourseView: View {
         VStack(spacing: 4) {
             HStack {
                 Text("接下来")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.caption.weight(.medium))
                     .foregroundColor(.secondary)
                 Spacer()
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 9))
+                    .font(.caption2)
                     .foregroundColor(.secondary.opacity(0.6))
             }
 
@@ -181,16 +194,16 @@ struct CurrentCourseView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(next.course)
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.subheadline.bold())
                         .lineLimit(1)
                     HStack(spacing: 4) {
                         Text(next.start_time)
-                            .font(.system(size: 11, design: .rounded))
+                            .font(.footnote.bold().monospacedDigit())
                             .foregroundColor(.cyan)
                         Text("·")
                             .foregroundColor(.secondary)
                         Text(next.location)
-                            .font(.system(size: 11))
+                            .font(.footnote)
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
@@ -222,10 +235,10 @@ struct CurrentCourseView: View {
                 )
 
             Text("近期无课程")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.headline)
 
             Text("好好休息吧 🎉")
-                .font(.system(size: 13))
+                .font(.body)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
