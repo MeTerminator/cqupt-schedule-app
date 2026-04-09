@@ -44,81 +44,73 @@ struct CurrentCourseView: View {
 
     @ViewBuilder
     private func mainCourseCard(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
-        HStack(spacing: 10) {
-            // 左侧：倒计时 / 进度环
-            countdownSection(course: course, isOngoing: isOngoing, schedule: schedule, now: now)
-
-            // 右侧：课程信息
-            courseInfoSection(course: course, isOngoing: isOngoing)
-        }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 14)
-                .fill(Color(white: 0.13))
-        )
+        courseInfoSection(course: course, isOngoing: isOngoing, schedule: schedule, now: now)
+            .padding(.vertical, 10)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 14)
+                    .fill(Color(white: 0.13))
+            )
     }
 
-    // MARK: - 左侧倒计时
+    // MARK: - 进行中小进度环
 
     @ViewBuilder
-    private func countdownSection(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
-        if isOngoing {
-            // 正在上课：环形进度
-            let progress = course.progress(at: now)
-            let remaining = course.endMin - (Calendar.current.component(.hour, from: now) * 60 + Calendar.current.component(.minute, from: now))
+    private func ongoingSmallRingView(course: WatchCourseInstance, now: Date) -> some View {
+        let progress = course.progress(at: now)
 
-            ZStack {
-                Circle()
-                    .stroke(Color.green.opacity(0.2), lineWidth: 5)
-                Circle()
-                    .trim(from: 0, to: CGFloat(progress))
-                    .stroke(
-                        AngularGradient(
-                            gradient: Gradient(colors: [.green, .mint]),
-                            center: .center,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(360)
-                        ),
-                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
+        ZStack {
+            Circle()
+                .stroke(Color.green.opacity(0.2), lineWidth: 3)
+            Circle()
+                .trim(from: 0, to: CGFloat(progress))
+                .stroke(
+                    AngularGradient(
+                        gradient: Gradient(colors: [.green, .mint]),
+                        center: .center,
+                        startAngle: .degrees(0),
+                        endAngle: .degrees(360)
+                    ),
+                    style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+        }
+        .frame(width: 22, height: 22)
+    }
 
-                VStack(spacing: 0) {
-                    Text("\(max(remaining, 0))")
-                        .font(.title3.bold().monospacedDigit())
-                        .foregroundColor(.green)
-                    Text("分钟")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+    @ViewBuilder
+    private func countdownBadgeView(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
+        if let target = SharedDataProvider.countdownTarget(for: course, isOngoing: isOngoing, at: now, response: schedule) {
+            TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                let diff = Int(target.timeIntervalSince(context.date))
+                let color: Color = isOngoing ? .green : .orange
+                if diff > 0 {
+                    let h = diff / 3600
+                    let m = (diff % 3600) / 60
+                    let s = diff % 60
+                    
+                    Text(String(format: "%02d:%02d:%02d", h, m, s))
+                        .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundColor(color)
+                } else {
+                    // 时间已到或即将开始
+                    Text("00:00:00")
+                        .font(.system(size: 14, weight: .bold, design: .rounded).monospacedDigit())
+                        .foregroundColor(color)
                 }
             }
-            .frame(width: 60, height: 60)
-        } else {
-            // 即将上课：倒计时数字
-            if let target = SharedDataProvider.countdownTarget(for: course, isOngoing: false, at: now, response: schedule) {
-                VStack(spacing: 2) {
-                    Image(systemName: "clock.badge")
-                        .font(.footnote)
-                        .foregroundColor(.orange)
-
-                    Text(target, style: .timer)
-                        .font(.headline.bold().monospacedDigit())
-                        .foregroundColor(.orange)
-                        .multilineTextAlignment(.center)
-                        .frame(width: 60)
-                }
-                .frame(width: 60, height: 60)
-            } else {
-                Spacer()
-                    .frame(width: 60, height: 60)
-            }
+            .padding(.horizontal, 6)
+            .padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill((isOngoing ? Color.green : Color.orange).opacity(0.15))
+            )
         }
     }
 
     // MARK: - 右侧课程信息
 
-    private func courseInfoSection(course: WatchCourseInstance, isOngoing: Bool) -> some View {
+    private func courseInfoSection(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             // 状态标签
             HStack(spacing: 4) {
@@ -128,46 +120,45 @@ struct CurrentCourseView: View {
                 Text(isOngoing ? "进行中" : "即将开始")
                     .font(.caption.weight(.medium))
                     .foregroundColor(isOngoing ? .green : .orange)
-            }
-
-            // 课程名称
-            Text(course.course)
-                .font(.headline)
-                .lineLimit(2)
-
-            // 地点
-            HStack(spacing: 3) {
-                Image(systemName: "mappin.circle.fill")
-                    .font(.caption2)
-                    .foregroundColor(.blue)
-                Text(course.location)
-                    .font(.caption2)
-                    .lineLimit(1)
-                    .foregroundColor(.secondary)
-            }
-
-            // 时间 (Timeline 风格)
-            HStack(spacing: 6) {
-                VStack(spacing: 0) {
-                    Circle()
-                        .fill(isOngoing ? Color.green : Color.purple)
-                        .frame(width: 4, height: 4)
-                    Rectangle()
-                        .fill(Color.secondary.opacity(0.3))
-                        .frame(width: 1, height: 10)
-                    Circle()
-                        .stroke(Color.secondary.opacity(0.5), lineWidth: 1)
-                        .frame(width: 4, height: 4)
-                }
-                .padding(.vertical, 2)
                 
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(course.start_time)
-                        .font(.caption2.monospacedDigit())
-                    Text(course.end_time)
-                        .font(.caption2.monospacedDigit())
+                // 进行中和未开始都有倒计时徽章
+                Spacer()
+                countdownBadgeView(course: course, isOngoing: isOngoing, schedule: schedule, now: now)
+            }
+
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 4) {
+                    // 课程名称
+                    Text(course.course)
+                        .font(.headline)
+                        .lineLimit(2)
+
+                    // 地点
+                    HStack(spacing: 3) {
+                        Image(systemName: "mappin.circle.fill")
+                            .font(.caption2)
+                            .foregroundColor(.blue)
+                        Text(course.location)
+                            .font(.caption2)
+                            .lineLimit(1)
+                            .foregroundColor(.secondary)
+                    }
+
+                    // 时间 (统一水平格式)
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock")
+                            .font(.caption2)
+                            .foregroundColor(isOngoing ? .green : .orange)
+                        Text("\(course.start_time) - \(course.end_time)")
+                            .font(.caption2.monospacedDigit())
+                            .foregroundColor(.secondary)
+                    }
                 }
-                .foregroundColor(.secondary)
+                
+                if isOngoing {
+                    Spacer()
+                    ongoingSmallRingView(course: course, now: now)
+                }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
