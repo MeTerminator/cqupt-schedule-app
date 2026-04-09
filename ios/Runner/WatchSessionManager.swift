@@ -39,13 +39,12 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
         let prefs = UserDefaults(suiteName: appGroupId)
         let currentData = prefs?.string(forKey: dataKey) ?? ""
 
-        guard !currentData.isEmpty else { return }
-
+        // 即使数据为空也检查 Hash，这样退出登录清空数据时也能同步到 Watch
         let currentHash = currentData.hashValue
         guard currentHash != lastSyncedHash else { return }
 
         lastSyncedHash = currentHash
-        print("[WatchSync] UserDefaults data changed, syncing to Watch...")
+        print("[WatchSync] UserDefaults data changed (length: \(currentData.count)), syncing to Watch...")
         syncScheduleToWatch()
     }
 
@@ -68,10 +67,8 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
         }
 
         let prefs = UserDefaults(suiteName: appGroupId)
-        guard let jsonString = prefs?.string(forKey: dataKey) else {
-            print("[WatchSync] No schedule data in UserDefaults")
-            return
-        }
+        // 如果没有数据，发送空字符串以触发 Watch 端清空
+        let jsonString = prefs?.string(forKey: dataKey) ?? ""
 
         let payload: [String: Any] = [
             "full_schedule_json": jsonString,

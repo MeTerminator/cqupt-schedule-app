@@ -13,6 +13,7 @@ import 'widgets/user_detail_view.dart';
 import 'widgets/toast_view.dart';
 import 'models/theme_model.dart';
 import 'package:path_provider/path_provider.dart';
+import 'services/widget_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -81,6 +82,7 @@ class _MyAppState extends State<MyApp> {
     _viewModel.currentId = '';
     _viewModel.scheduleData = null;
     _viewModel.clearAllColorMaps(); // 清空课程颜色映射
+    WidgetService.clearWidgetData(); // 清空 Widget 和 Watch 数据
     _viewModel.notifyListeners();
   }
 

@@ -60,5 +60,31 @@ class WidgetService {
       debugPrint("Widget Sync Error: $e");
     }
   }
+
+  /// 清空 Widget 和 Watch 的课表数据（退出登录时调用）
+  static Future<void> clearWidgetData() async {
+    try {
+      if (Platform.isIOS) {
+        await HomeWidget.setAppGroupId(appGroupId);
+      }
+
+      // 清除 App Group UserDefaults 中的课表数据
+      await HomeWidget.saveWidgetData('full_schedule_json', null);
+
+      // 刷新所有 Widget 使其显示空状态
+      if (Platform.isIOS) {
+        await HomeWidget.updateWidget(iOSName: iOSWidgetKind);
+        await HomeWidget.updateWidget(iOSName: upcomingCourseWidgetKind);
+        await HomeWidget.updateWidget(iOSName: todayCourseWidgetKind);
+        await HomeWidget.updateWidget(iOSName: lockScreenWidgetKind);
+        // WatchSessionManager 会通过 3 秒轮询检测到数据变化并同步到 Watch
+      } else if (Platform.isAndroid) {
+        await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
+        await HomeWidget.updateWidget(androidName: androidTodayReceiver);
+      }
+    } catch (e) {
+      debugPrint("Widget Clear Error: $e");
+    }
+  }
 }
 
