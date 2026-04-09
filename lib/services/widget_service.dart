@@ -44,13 +44,13 @@ class WidgetService {
 
       // 平台差异化更新
       if (Platform.isIOS) {
-        // iOS 更新所有 widget（通过更新 bundle 来触发所有 widget 刷新）
-        // home_widget 包在 iOS 上会通过 bundle ID 触发整个 widget extension 的刷新
+        // iOS 更新所有 iPhone widget
         await HomeWidget.updateWidget(iOSName: iOSWidgetKind);
-        // 额外调用确保所有 widget 都刷新
         await HomeWidget.updateWidget(iOSName: upcomingCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: todayCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: lockScreenWidgetKind);
+        // Apple Watch 同步由原生 WatchSessionManager 自动处理
+        // 它会监听 UserDefaults 变化并通过 WatchConnectivity 发送到 Watch
       } else if (Platform.isAndroid) {
         // Android 更新所有相关的 Receiver
         await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
@@ -61,3 +61,4 @@ class WidgetService {
     }
   }
 }
+
