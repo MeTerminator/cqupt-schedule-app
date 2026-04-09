@@ -21,6 +21,7 @@
 		7328EE512F87381800B2417A /* SharedModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7328EE4D2F87381800B2417A /* SharedModels.swift */; };
 		7328EE522F87381800B2417A /* SharedDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7328EE4C2F87381800B2417A /* SharedDataProvider.swift */; };
 		7328EEAB2F87427000B2417A /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7328EEAA2F87427000B2417A /* WatchSessionManager.swift */; };
+		7328F0B52F87678800B2417A /* WatchCourseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7328EE252F87376E00B2417A /* WatchCourseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7766E5BA0DB11D89920B3B05 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68C27261D061F19BE062F1BD /* Pods_RunnerTests.framework */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
@@ -52,6 +53,20 @@
 			remoteGlobalIDString = 7328EE102F87374900B2417A;
 			remoteInfo = "CquptScheduleWatch Watch App";
 		};
+		7328F0B32F87675300B2417A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7328EE242F87376E00B2417A;
+			remoteInfo = WatchCourseWidgetExtension;
+		};
+		7328F0B62F87678800B2417A /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 7328EE242F87376E00B2417A;
+			remoteInfo = WatchCourseWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -75,6 +90,17 @@
 				7328EE1B2F87374900B2417A /* CquptScheduleWatch Watch App.app in Embed Watch Content */,
 			);
 			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		7328F0B82F87678800B2417A /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				7328F0B52F87678800B2417A /* WatchCourseWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		9705A1C41CF9048500538489 /* Embed Frameworks */ = {
@@ -137,12 +163,26 @@
 			);
 			target = 730A632F2F59EF2F008F34D5 /* CourseWidget */;
 		};
+		7328F0C02F8768CD00B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7328EE102F87374900B2417A /* CquptScheduleWatch Watch App */;
+		};
+		7328F1202F876AD400B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 7328EE242F87376E00B2417A /* WatchCourseWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		730A63352F59EF2F008F34D5 /* CourseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (730A63462F59EF30008F34D5 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = CourseWidget; sourceTree = "<group>"; };
-		7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = "CquptScheduleWatch Watch App"; sourceTree = "<group>"; };
-		7328EE282F87376E00B2417A /* WatchCourseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = WatchCourseWidget; sourceTree = "<group>"; };
+		7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (7328F0C02F8768CD00B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = "CquptScheduleWatch Watch App"; sourceTree = "<group>"; };
+		7328EE282F87376E00B2417A /* WatchCourseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (7328F1202F876AD400B2417A /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = WatchCourseWidget; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -339,10 +379,13 @@
 				7328EE0D2F87374900B2417A /* Sources */,
 				7328EE0E2F87374900B2417A /* Frameworks */,
 				7328EE0F2F87374900B2417A /* Resources */,
+				7328F0B82F87678800B2417A /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				7328F0B42F87675300B2417A /* PBXTargetDependency */,
+				7328F0B72F87678800B2417A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */,
@@ -675,6 +718,16 @@
 			isa = PBXTargetDependency;
 			target = 7328EE102F87374900B2417A /* CquptScheduleWatch Watch App */;
 			targetProxy = 7328EE192F87374900B2417A /* PBXContainerItemProxy */;
+		};
+		7328F0B42F87675300B2417A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7328EE242F87376E00B2417A /* WatchCourseWidgetExtension */;
+			targetProxy = 7328F0B32F87675300B2417A /* PBXContainerItemProxy */;
+		};
+		7328F0B72F87678800B2417A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 7328EE242F87376E00B2417A /* WatchCourseWidgetExtension */;
+			targetProxy = 7328F0B62F87678800B2417A /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -1114,7 +1167,7 @@
 				DEVELOPMENT_TEAM = 3M9757C25S;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchCourseWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WatchCourseWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1128,7 +1181,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.CquptScheduleWatch.WatchCourseWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.watchkitapp.WatchCourseWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1161,7 +1214,7 @@
 				DEVELOPMENT_TEAM = 3M9757C25S;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchCourseWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WatchCourseWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1174,7 +1227,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.CquptScheduleWatch.WatchCourseWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.watchkitapp.WatchCourseWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -1205,7 +1258,7 @@
 				DEVELOPMENT_TEAM = 3M9757C25S;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = WatchCourseWidget/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = WatchCourseWidget;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -1218,7 +1271,7 @@
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.CquptScheduleWatch.WatchCourseWidget;
+				PRODUCT_BUNDLE_IDENTIFIER = top.met6.cquptscheduleios.watchkitapp.WatchCourseWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
