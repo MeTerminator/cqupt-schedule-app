@@ -57,15 +57,6 @@ struct WatchCircularView: View {
     let entry: WatchCourseEntry
 
     var body: some View {
-        if #available(iOS 16.0, watchOS 9.0, *) {
-            content
-        } else {
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
         if let course = entry.topCourse {
             if entry.isOngoing {
                 // 进行中：环形进度 + 剩余分钟
@@ -85,10 +76,8 @@ struct WatchCircularView: View {
                     }
                 }
                 .widgetLabel {
-                    if #available(iOS 14.0, watchOS 7.0, *) {
-                        ProgressView(value: entry.progress)
-                            .tint(.green)
-                    }
+                    ProgressView(value: entry.progress)
+                        .tint(.green)
                 }
             } else {
                 // 即将上课：显示开始时间
@@ -124,15 +113,6 @@ struct WatchInlineView: View {
     let entry: WatchCourseEntry
 
     var body: some View {
-        if #available(iOS 14.0, watchOS 7.0, *) {
-            content
-        } else {
-            EmptyView()
-        }
-    }
-
-    @ViewBuilder
-    private var content: some View {
         if let course = entry.topCourse {
             if entry.isOngoing {
                 let nowMin = Calendar.current.component(.hour, from: entry.date) * 60
@@ -168,19 +148,6 @@ struct WatchCornerView: View {
 
     var body: some View {
         #if os(watchOS)
-        if #available(watchOS 9.0, *) {
-            content
-        } else {
-            EmptyView()
-        }
-        #else
-        EmptyView()
-        #endif
-    }
-
-    #if os(watchOS)
-    @ViewBuilder
-    private var content: some View {
         if let course = entry.topCourse {
             if entry.isOngoing {
                 // 进行中：显示进度 gauge
@@ -215,6 +182,8 @@ struct WatchCornerView: View {
                     Text("无课程")
                 }
         }
+        #else
+        EmptyView()
+        #endif
     }
-    #endif
 }

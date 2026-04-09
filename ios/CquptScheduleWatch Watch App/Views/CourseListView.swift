@@ -60,7 +60,9 @@ struct CourseListView: View {
                             }
                         }
                     }
+#if os(watchOS)
                     .listStyle(.carousel)
+#endif
                     .navigationTitle("课程表")
                     .navigationBarTitleDisplayMode(.inline)
                 }

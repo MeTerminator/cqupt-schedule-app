@@ -48,6 +48,10 @@ struct ContentView: View {
             CurrentCourseView()
             CourseListView()
         }
+#if os(watchOS)
         .tabViewStyle(.verticalPage)
+#else
+        .tabViewStyle(.page)
+#endif
     }
 }

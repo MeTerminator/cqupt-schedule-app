@@ -3,7 +3,6 @@ import WidgetKit
 
 // MARK: - Timeline Entry
 
-@available(iOS 14.0, watchOS 7.0, *)
 struct WatchCourseEntry: TimelineEntry {
     let date: Date
     let topCourse: WatchCourseInstance?
@@ -16,7 +15,6 @@ struct WatchCourseEntry: TimelineEntry {
 
 // MARK: - Timeline Provider
 
-@available(iOS 14.0, watchOS 7.0, *)
 struct WatchCourseProvider: TimelineProvider {
     func placeholder(in context: Context) -> WatchCourseEntry {
         WatchCourseEntry(
@@ -147,21 +145,12 @@ struct WatchRectangularWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchCourseProvider()) { entry in
-            content(entry: entry)
+            WatchRectangularView(entry: entry)
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("课程信息")
         .description("显示当前或下一节课的详细信息")
         .supportedFamilies([.accessoryRectangular])
-    }
-    
-    @ViewBuilder
-    private func content(entry: WatchCourseEntry) -> some View {
-        if #available(iOS 17.0, watchOS 10.0, *) {
-            WatchRectangularView(entry: entry)
-                .containerBackground(.clear, for: .widget)
-        } else {
-            WatchRectangularView(entry: entry)
-        }
     }
 }
 
@@ -171,21 +160,12 @@ struct WatchCircularWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchCourseProvider()) { entry in
-            content(entry: entry)
+            WatchCircularView(entry: entry)
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("课程进度")
         .description("环形显示课程进度或剩余时间")
         .supportedFamilies([.accessoryCircular])
-    }
-    
-    @ViewBuilder
-    private func content(entry: WatchCourseEntry) -> some View {
-        if #available(iOS 17.0, watchOS 10.0, *) {
-            WatchCircularView(entry: entry)
-                .containerBackground(.clear, for: .widget)
-        } else {
-            WatchCircularView(entry: entry)
-        }
     }
 }
 
@@ -195,21 +175,12 @@ struct WatchInlineWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchCourseProvider()) { entry in
-            content(entry: entry)
+            WatchInlineView(entry: entry)
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("课程概览")
         .description("单行显示课程名和时间")
         .supportedFamilies([.accessoryInline])
-    }
-    
-    @ViewBuilder
-    private func content(entry: WatchCourseEntry) -> some View {
-        if #available(iOS 17.0, watchOS 10.0, *) {
-            WatchInlineView(entry: entry)
-                .containerBackground(.clear, for: .widget)
-        } else {
-            WatchInlineView(entry: entry)
-        }
     }
 }
 
@@ -220,21 +191,12 @@ struct WatchCornerWidget: Widget {
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: WatchCourseProvider()) { entry in
-            content(entry: entry)
+            WatchCornerView(entry: entry)
+                .containerBackground(.clear, for: .widget)
         }
         .configurationDisplayName("课程角标")
         .description("在表盘角落显示课程倒计时")
         .supportedFamilies([.accessoryCorner])
-    }
-    
-    @ViewBuilder
-    private func content(entry: WatchCourseEntry) -> some View {
-        if #available(watchOS 10.0, *) {
-            WatchCornerView(entry: entry)
-                .containerBackground(.clear, for: .widget)
-        } else {
-            WatchCornerView(entry: entry)
-        }
     }
 }
 #endif

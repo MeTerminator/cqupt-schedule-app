@@ -43,6 +43,13 @@ class WatchConnectivityDelegate: NSObject, WCSessionDelegate {
         }
     }
 
+    #if os(iOS)
+    func sessionDidBecomeInactive(_ session: WCSession) {}
+    func sessionDidDeactivate(_ session: WCSession) {
+        session.activate()
+    }
+    #endif
+
     /// 接收 applicationContext（最新数据，App 未运行时也能收到）
     func session(_ session: WCSession, didReceiveApplicationContext applicationContext: [String: Any]) {
         print("[WatchReceiver] Received applicationContext")

@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-@available(iOS 14.0, watchOS 7.0, *)
+@available(iOS 16.0, watchOS 9.0, *)
 @main
 struct WatchCourseWidgetBundle: WidgetBundle {
     var body: some Widget {
