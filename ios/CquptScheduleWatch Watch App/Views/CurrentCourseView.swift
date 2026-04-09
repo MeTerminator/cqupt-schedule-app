@@ -26,7 +26,8 @@ struct CurrentCourseView: View {
                     // MARK: - 下节课预览（可点击）
                     if let next = nextCourse {
                         let nextStatus = SharedDataProvider.courseStatus(course: next, at: now, response: schedule)
-                        nextCourseCard(next: next)
+                        let isTomorrow = next.day != SharedDataProvider.courseDay(from: now)
+                        nextCourseCard(next: next, isTomorrow: isTomorrow)
                             .onTapGesture { showNextDetail = true }
                             .sheet(isPresented: $showNextDetail) {
                                 CourseDetailView(course: next, status: nextStatus)
@@ -166,7 +167,7 @@ struct CurrentCourseView: View {
 
     // MARK: - 接下来课程卡片（可点击跳转详情）
 
-    private func nextCourseCard(next: WatchCourseInstance) -> some View {
+    private func nextCourseCard(next: WatchCourseInstance, isTomorrow: Bool) -> some View {
         VStack(spacing: 4) {
             HStack {
                 Text("接下来")
@@ -188,7 +189,7 @@ struct CurrentCourseView: View {
                         .font(.subheadline.bold())
                         .lineLimit(1)
                     HStack(spacing: 4) {
-                        Text(next.start_time)
+                        Text(next.start_time + (isTomorrow ? " 明日" : ""))
                             .font(.footnote.bold().monospacedDigit())
                             .foregroundColor(.cyan)
                         Text("·")

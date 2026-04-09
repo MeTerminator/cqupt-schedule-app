@@ -117,7 +117,6 @@ struct SharedDataProvider {
         return nextUpcomingCourse(from: response, at: date)
     }
 
-    /// 获取 topCourse 之后的下一节课（用于"接下来"显示）
     static func courseAfter(_ topCourse: WatchCourseInstance, isOngoing: Bool, from response: WatchScheduleResponse, at date: Date) -> WatchCourseInstance? {
         let calendar = Calendar.current
         let nowMin = calendar.component(.hour, from: date) * 60 + calendar.component(.minute, from: date)
@@ -126,17 +125,18 @@ struct SharedDataProvider {
         // 获取今天还没开始的课程
         let todayUpcoming = todayRemaining.filter { $0.startMin > nowMin }
 
+        var allUpcoming = todayUpcoming
+        allUpcoming.append(contentsOf: tomorrowAllCourses(from: response, at: date))
+
         if isOngoing {
-            // topCourse 正在进行中 → "接下来"就是今天第一个还没开始的
-            return todayUpcoming.first
+            // topCourse 正在进行中 → "接下来"就是今天第一个还没开始的，或者明天第一节
+            return allUpcoming.first
         } else {
             // topCourse 是即将开始的（upcoming）→ "接下来"是跳过 topCourse 后的下一个
-            let afterTop = todayUpcoming.filter { $0.id != topCourse.id }
-            if let next = afterTop.first {
-                return next
+            if let index = allUpcoming.firstIndex(where: { $0.id == topCourse.id }), index + 1 < allUpcoming.count {
+                return allUpcoming[index + 1]
             }
-            // 今天没有更多课了，返回明天第一节
-            return tomorrowAllCourses(from: response, at: date).first
+            return nil
         }
     }
 
