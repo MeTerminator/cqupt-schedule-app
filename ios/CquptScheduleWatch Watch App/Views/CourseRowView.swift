@@ -3,42 +3,47 @@ import SwiftUI
 struct CourseRowView: View {
     let course: WatchCourseInstance
     let status: WatchCourseStatus
+    @State private var showDetail = false
 
     var body: some View {
-        HStack(spacing: 8) {
-            // 左侧状态 + 颜色条
-            statusIndicator
+        Button {
+            showDetail = true
+        } label: {
+            HStack(spacing: 8) {
+                // 左侧状态 + 颜色条
+                statusIndicator
 
-            // 课程信息
-            VStack(alignment: .leading, spacing: 2) {
-                Text(course.course)
-                    .font(.system(size: 14, weight: .bold))
-                    .lineLimit(1)
-                    .foregroundColor(statusTextColor)
+                // 课程信息
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(course.course)
+                        .font(.system(size: 14, weight: .bold))
+                        .lineLimit(1)
+                        .foregroundColor(statusTextColor)
 
-                HStack(spacing: 3) {
-                    Image(systemName: "mappin")
-                        .font(.system(size: 9))
-                    Text(course.location)
+                    Text(course.locationWithTeacher)
                         .font(.system(size: 11))
                         .lineLimit(1)
+                        .foregroundColor(.secondary)
                 }
-                .foregroundColor(.secondary)
-            }
 
-            Spacer(minLength: 0)
+                Spacer(minLength: 0)
 
-            // 右侧时间
-            VStack(alignment: .trailing, spacing: 1) {
-                Text(course.start_time)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                Text(course.end_time)
-                    .font(.system(size: 12, design: .rounded))
-                    .foregroundColor(.secondary)
+                // 右侧时间
+                VStack(alignment: .trailing, spacing: 1) {
+                    Text(course.start_time)
+                        .font(.system(size: 12, weight: .medium, design: .rounded))
+                    Text(course.end_time)
+                        .font(.system(size: 12, design: .rounded))
+                        .foregroundColor(.secondary)
+                }
             }
+            .padding(.vertical, 4)
+            .padding(.horizontal, 6)
         }
-        .padding(.vertical, 4)
-        .padding(.horizontal, 6)
+        .buttonStyle(.plain)
+        .sheet(isPresented: $showDetail) {
+            CourseDetailView(course: course, status: status)
+        }
     }
 
     // MARK: - 状态指示器
@@ -47,7 +52,6 @@ struct CourseRowView: View {
         VStack(spacing: 0) {
             switch status {
             case .ongoing:
-                // 进行中：绿色脉冲点
                 ZStack {
                     Circle()
                         .fill(Color.green.opacity(0.3))
@@ -82,6 +86,93 @@ struct CourseRowView: View {
         case .ongoing: return .green
         case .upcoming: return .primary
         case .finished: return .secondary
+        }
+    }
+}
+
+// MARK: - 课程详情视图
+
+struct CourseDetailView: View {
+    let course: WatchCourseInstance
+    let status: WatchCourseStatus
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 12) {
+                // 状态标签
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(statusColor)
+                        .frame(width: 8, height: 8)
+                    Text(statusText)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(statusColor)
+                }
+                .padding(.top, 4)
+
+                // 课程名
+                Text(course.course)
+                    .font(.system(size: 18, weight: .bold))
+                    .multilineTextAlignment(.center)
+                    .lineLimit(3)
+
+                Divider()
+
+                // 详细信息
+                VStack(spacing: 10) {
+                    detailRow(icon: "clock.fill", color: .purple, label: "时间", value: course.timeRange)
+                    detailRow(icon: "mappin.circle.fill", color: .blue, label: "地点", value: course.location)
+
+                    if let teacher = course.teacher, !teacher.isEmpty {
+                        detailRow(icon: "person.fill", color: .orange, label: "教师", value: teacher)
+                    }
+
+                    detailRow(icon: "tag.fill", color: .pink, label: "类型", value: course.type)
+                }
+            }
+            .padding(.horizontal, 8)
+        }
+    }
+
+    private func detailRow(icon: String, color: Color, label: String, value: String) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundColor(color)
+                .frame(width: 16)
+
+            VStack(alignment: .leading, spacing: 1) {
+                Text(label)
+                    .font(.system(size: 10))
+                    .foregroundColor(.secondary)
+                Text(value)
+                    .font(.system(size: 14, weight: .medium))
+                    .lineLimit(2)
+            }
+
+            Spacer()
+        }
+        .padding(.vertical, 4)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(white: 0.15))
+        )
+    }
+
+    private var statusColor: Color {
+        switch status {
+        case .ongoing: return .green
+        case .upcoming: return .orange
+        case .finished: return .gray
+        }
+    }
+
+    private var statusText: String {
+        switch status {
+        case .ongoing: return "进行中"
+        case .upcoming: return "即将开始"
+        case .finished: return "已结束"
         }
     }
 }

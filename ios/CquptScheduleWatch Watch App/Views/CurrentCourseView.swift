@@ -1,50 +1,76 @@
 import SwiftUI
 
 struct CurrentCourseView: View {
-    let now = Date()
+    @EnvironmentObject var viewModel: WatchScheduleViewModel
+    @State private var showTopDetail = false
+    @State private var showNextDetail = false
 
     var body: some View {
-        let schedule = SharedDataProvider.loadSchedule()
+        let now = viewModel.now
 
-        if let schedule = schedule,
+        if let schedule = viewModel.schedule,
            let topCourse = SharedDataProvider.topCourse(from: schedule, at: now) {
             let status = SharedDataProvider.courseStatus(course: topCourse, at: now, response: schedule)
             let isOngoing = status == .ongoing
+            let nextCourse = SharedDataProvider.courseAfter(topCourse, isOngoing: isOngoing, from: schedule, at: now)
 
             ScrollView {
-                VStack(spacing: 0) {
-                    // MARK: - 进度环 / 倒计时
-                    headerSection(course: topCourse, isOngoing: isOngoing, schedule: schedule)
-                        .padding(.bottom, 8)
+                VStack(spacing: 8) {
+                    // MARK: - 主面板：左倒计时 + 右课程信息
+                    mainCourseCard(course: topCourse, isOngoing: isOngoing, schedule: schedule, now: now)
+                        .onTapGesture { showTopDetail = true }
+                        .sheet(isPresented: $showTopDetail) {
+                            CourseDetailView(course: topCourse, status: status)
+                        }
 
-                    // MARK: - 课程信息
-                    courseInfoSection(course: topCourse, isOngoing: isOngoing)
-
-                    // MARK: - 下节课预览
-                    nextCoursePreview(schedule: schedule)
+                    // MARK: - 下节课预览（可点击）
+                    if let next = nextCourse {
+                        let nextStatus = SharedDataProvider.courseStatus(course: next, at: now, response: schedule)
+                        nextCourseCard(next: next)
+                            .onTapGesture { showNextDetail = true }
+                            .sheet(isPresented: $showNextDetail) {
+                                CourseDetailView(course: next, status: nextStatus)
+                            }
+                    }
                 }
-                .padding(.horizontal, 4)
+                .padding(.horizontal, 2)
             }
         } else {
             emptyCourseView
         }
     }
 
-    // MARK: - 进度环区域
+    // MARK: - 主课程卡片（左右布局）
 
     @ViewBuilder
-    private func headerSection(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse) -> some View {
+    private func mainCourseCard(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
+        HStack(spacing: 10) {
+            // 左侧：倒计时 / 进度环
+            countdownSection(course: course, isOngoing: isOngoing, schedule: schedule, now: now)
+
+            // 右侧：课程信息
+            courseInfoSection(course: course, isOngoing: isOngoing)
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color(white: 0.13))
+        )
+    }
+
+    // MARK: - 左侧倒计时
+
+    @ViewBuilder
+    private func countdownSection(course: WatchCourseInstance, isOngoing: Bool, schedule: WatchScheduleResponse, now: Date) -> some View {
         if isOngoing {
-            // 正在上课：显示环形进度
+            // 正在上课：环形进度
             let progress = course.progress(at: now)
             let remaining = course.endMin - (Calendar.current.component(.hour, from: now) * 60 + Calendar.current.component(.minute, from: now))
 
             ZStack {
-                // 背景环
                 Circle()
-                    .stroke(Color.green.opacity(0.2), lineWidth: 6)
-
-                // 进度环
+                    .stroke(Color.green.opacity(0.2), lineWidth: 5)
                 Circle()
                     .trim(from: 0, to: CGFloat(progress))
                     .stroke(
@@ -54,69 +80,69 @@ struct CurrentCourseView: View {
                             startAngle: .degrees(0),
                             endAngle: .degrees(360)
                         ),
-                        style: StrokeStyle(lineWidth: 6, lineCap: .round)
+                        style: StrokeStyle(lineWidth: 5, lineCap: .round)
                     )
                     .rotationEffect(.degrees(-90))
 
-                VStack(spacing: 2) {
-                    Text("剩余")
-                        .font(.system(size: 10))
-                        .foregroundColor(.secondary)
+                VStack(spacing: 0) {
                     Text("\(max(remaining, 0))")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundColor(.green)
                     Text("分钟")
-                        .font(.system(size: 10))
+                        .font(.system(size: 8))
                         .foregroundColor(.secondary)
                 }
             }
-            .frame(width: 80, height: 80)
+            .frame(width: 60, height: 60)
         } else {
-            // 即将上课：显示倒计时
+            // 即将上课：倒计时数字
             if let target = SharedDataProvider.countdownTarget(for: course, isOngoing: false, at: now, response: schedule) {
-                VStack(spacing: 4) {
-                    Text("距离上课")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                VStack(spacing: 2) {
+                    Image(systemName: "clock.badge")
+                        .font(.system(size: 14))
+                        .foregroundColor(.orange)
 
                     Text(target, style: .timer)
-                        .font(.system(size: 22, weight: .bold, design: .rounded))
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(.orange)
                         .multilineTextAlignment(.center)
+                        .frame(width: 60)
                 }
-                .padding(.vertical, 6)
+                .frame(width: 60, height: 60)
+            } else {
+                Spacer()
+                    .frame(width: 60, height: 60)
             }
         }
     }
 
-    // MARK: - 课程信息区域
+    // MARK: - 右侧课程信息
 
     private func courseInfoSection(course: WatchCourseInstance, isOngoing: Bool) -> some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             // 状态标签
             HStack(spacing: 4) {
                 Circle()
                     .fill(isOngoing ? Color.green : Color.orange)
-                    .frame(width: 6, height: 6)
+                    .frame(width: 5, height: 5)
                 Text(isOngoing ? "进行中" : "即将开始")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundColor(isOngoing ? .green : .orange)
             }
 
             // 课程名称
             Text(course.course)
-                .font(.system(size: 16, weight: .bold))
+                .font(.system(size: 15, weight: .bold))
                 .lineLimit(2)
-                .multilineTextAlignment(.center)
 
             // 地点
             HStack(spacing: 3) {
                 Image(systemName: "mappin.circle.fill")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundColor(.blue)
                 Text(course.location)
-                    .font(.system(size: 13))
+                    .font(.system(size: 11))
                     .lineLimit(1)
                     .foregroundColor(.secondary)
             }
@@ -124,69 +150,61 @@ struct CurrentCourseView: View {
             // 时间
             HStack(spacing: 3) {
                 Image(systemName: "clock.fill")
-                    .font(.system(size: 11))
+                    .font(.system(size: 10))
                     .foregroundColor(.purple)
                 Text(course.timeRange)
-                    .font(.system(size: 13, design: .rounded))
+                    .font(.system(size: 11, design: .rounded))
                     .foregroundColor(.secondary)
             }
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .padding(.horizontal, 8)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(Color(white: 0.15))
-        )
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: - 下节课预览
+    // MARK: - 接下来课程卡片（可点击跳转详情）
 
-    @ViewBuilder
-    private func nextCoursePreview(schedule: WatchScheduleResponse) -> some View {
-        let nextCourse: WatchCourseInstance? = {
-            let calendar = Calendar.current
-            let nowMin = calendar.component(.hour, from: now) * 60 + calendar.component(.minute, from: now)
-            let remaining = SharedDataProvider.todayRemainingCourses(from: schedule, at: now)
-            // 跳过正在上的或第一个（topCourse），找下一个
-            let upcoming = remaining.filter { $0.startMin > nowMin }
-            return upcoming.count > 1 ? upcoming[1] : upcoming.first
-        }()
+    private func nextCourseCard(next: WatchCourseInstance) -> some View {
+        VStack(spacing: 4) {
+            HStack {
+                Text("接下来")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary.opacity(0.6))
+            }
 
-        if let next = nextCourse {
-            VStack(spacing: 4) {
-                HStack {
-                    Text("接下来")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
-                    Spacer()
-                }
+            HStack(spacing: 6) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.cyan)
+                    .frame(width: 3, height: 28)
 
-                HStack(spacing: 6) {
-                    RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.cyan)
-                        .frame(width: 3, height: 24)
-
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(next.course)
-                            .font(.system(size: 13, weight: .semibold))
-                            .lineLimit(1)
-                        Text("\(next.start_time) · \(next.location)")
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(next.course)
+                        .font(.system(size: 13, weight: .semibold))
+                        .lineLimit(1)
+                    HStack(spacing: 4) {
+                        Text(next.start_time)
+                            .font(.system(size: 11, design: .rounded))
+                            .foregroundColor(.cyan)
+                        Text("·")
+                            .foregroundColor(.secondary)
+                        Text(next.location)
                             .font(.system(size: 11))
                             .foregroundColor(.secondary)
                             .lineLimit(1)
                     }
-                    Spacer()
                 }
-                .padding(.vertical, 6)
-                .padding(.horizontal, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(white: 0.12))
-                )
+                Spacer()
             }
-            .padding(.top, 8)
+            .padding(.vertical, 6)
+            .padding(.horizontal, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(white: 0.11))
+            )
         }
+        .padding(.top, 2)
     }
 
     // MARK: - 空状态

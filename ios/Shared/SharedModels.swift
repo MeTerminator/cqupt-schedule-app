@@ -43,6 +43,14 @@ struct WatchCourseInstance: Codable, Identifiable {
         "\(start_time) - \(end_time)"
     }
 
+    /// 地点 + 老师
+    var locationWithTeacher: String {
+        if let teacher = teacher, !teacher.isEmpty {
+            return "\(location) · \(teacher)"
+        }
+        return location
+    }
+
     private func timeToMin(_ t: String) -> Int {
         let parts = t.split(separator: ":")
         return (Int(parts.first ?? "0") ?? 0) * 60 + (Int(parts.last ?? "0") ?? 0)

@@ -94,7 +94,10 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
                 print("[WatchSync] sendMessage failed: \(error.localizedDescription)")
             })
         } else {
-            print("[WatchSync] Watch not reachable, relying on applicationContext")
+            // Watch 不可达时，追加 transferUserInfo 作为保底方案
+            // transferUserInfo 会排队并保证送达（即使 Watch App 未运行）
+            WCSession.default.transferUserInfo(payload)
+            print("[WatchSync] Watch not reachable, sent via applicationContext + transferUserInfo")
         }
     }
 

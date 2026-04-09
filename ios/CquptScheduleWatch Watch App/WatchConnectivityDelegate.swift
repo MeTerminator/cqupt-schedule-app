@@ -84,6 +84,11 @@ class WatchConnectivityDelegate: NSObject, WCSessionDelegate {
 
         print("[WatchReceiver] Schedule data saved to Watch local storage (\(jsonString.count) bytes)")
 
+        // 通知 SwiftUI ViewModel 数据已更新，触发 UI 刷新
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .watchScheduleDataDidUpdate, object: nil)
+        }
+
         // 刷新 Watch Complications
         WidgetCenter.shared.reloadAllTimelines()
         print("[WatchReceiver] Widget timelines reloaded")

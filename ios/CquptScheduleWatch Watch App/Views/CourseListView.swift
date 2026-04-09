@@ -1,13 +1,13 @@
 import SwiftUI
 
 struct CourseListView: View {
-    let now = Date()
+    @EnvironmentObject var viewModel: WatchScheduleViewModel
 
     var body: some View {
-        let schedule = SharedDataProvider.loadSchedule()
+        let now = viewModel.now
 
         NavigationStack {
-            if let schedule = schedule {
+            if let schedule = viewModel.schedule {
                 let todayCourses = SharedDataProvider.todayAllCourses(from: schedule, at: now)
                 let tomorrowCourses = SharedDataProvider.tomorrowAllCourses(from: schedule, at: now)
 

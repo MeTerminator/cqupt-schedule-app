@@ -348,8 +348,6 @@
 				7328EE122F87374900B2417A /* CquptScheduleWatch Watch App */,
 			);
 			name = "CquptScheduleWatch Watch App";
-			packageProductDependencies = (
-			);
 			productName = "CquptScheduleWatch Watch App";
 			productReference = 7328EE112F87374900B2417A /* CquptScheduleWatch Watch App.app */;
 			productType = "com.apple.product-type.application";
@@ -370,8 +368,6 @@
 				7328EE282F87376E00B2417A /* WatchCourseWidget */,
 			);
 			name = WatchCourseWidgetExtension;
-			packageProductDependencies = (
-			);
 			productName = WatchCourseWidgetExtension;
 			productReference = 7328EE252F87376E00B2417A /* WatchCourseWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
@@ -389,8 +385,8 @@
 				E9767F71DAF248E15BB621AB /* [CP] Embed Pods Frameworks */,
 				7278BCC0F31C50586847745B /* [CP] Copy Pods Resources */,
 				730A634B2F59EF30008F34D5 /* Embed Foundation Extensions */,
-				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 				7328EE1C2F87374900B2417A /* Embed Watch Content */,
+				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
 			);
 			buildRules = (
 			);
@@ -527,6 +523,7 @@
 			files = (
 			);
 			inputPaths = (
+				"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}",
 			);
 			name = "Thin Binary";
 			outputPaths = (
