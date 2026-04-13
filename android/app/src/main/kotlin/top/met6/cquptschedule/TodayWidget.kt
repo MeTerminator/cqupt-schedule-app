@@ -76,6 +76,7 @@ class TodayWidget : GlanceAppWidget() {
 
 @Composable
 private fun HeaderView(dateStr: String, count: Int, weekInfo: String) {
+    if (count <= 0) return
     Row(modifier = GlanceModifier.fillMaxWidth().padding(horizontal = 4.dp, vertical = 4.dp)) {
         Text(
                 "$dateStr · $count 节课",

@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
 import '../view_models/schedule_view_model.dart';
 
@@ -16,6 +18,13 @@ class WidgetService {
   // Android 配置（对应 AndroidManifest.xml 中 Receiver 的类名）
   static const String androidUpcomingReceiver = 'UpcomingWidgetReceiver';
   static const String androidTodayReceiver = 'TodayWidgetReceiver';
+
+  // Android 直接调用 Glance updateAll() 的 Platform Channel
+  static const _androidChannel = MethodChannel('top.met6.cquptschedule/widget');
+
+  // 防抖定时器，避免短时间内多次刷新导致 Glance session 互相取消
+  static Timer? _debounceTimer;
+  static Completer<void>? _pendingCompleter;
 
   static Future<void> syncToWidget(ScheduleViewModel vm) async {
     if (vm.scheduleData == null) return;
@@ -36,29 +45,55 @@ class WidgetService {
         ],
       };
 
-      // 统一保存数据
+      // 先保存数据（这一步总是立即执行）
       await HomeWidget.saveWidgetData(
         'full_schedule_json',
         jsonEncode(exportData),
       );
 
-      // 平台差异化更新
+      // 平台差异化：触发小组件刷新（Android 带防抖）
       if (Platform.isIOS) {
-        // iOS 更新所有 iPhone widget
         await HomeWidget.updateWidget(iOSName: iOSWidgetKind);
         await HomeWidget.updateWidget(iOSName: upcomingCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: todayCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: lockScreenWidgetKind);
-        // Apple Watch 同步由原生 WatchSessionManager 自动处理
-        // 它会监听 UserDefaults 变化并通过 WatchConnectivity 发送到 Watch
       } else if (Platform.isAndroid) {
-        // Android 更新所有相关的 Receiver
-        await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
-        await HomeWidget.updateWidget(androidName: androidTodayReceiver);
+        await _debouncedAndroidUpdate();
       }
     } catch (e) {
       debugPrint("Widget Sync Error: $e");
     }
+  }
+
+  /// Android 小组件刷新防抖：500ms 内的多次调用只执行最后一次
+  static Future<void> _debouncedAndroidUpdate() async {
+    // 取消上一次的定时器
+    _debounceTimer?.cancel();
+
+    // 创建新的 Completer 用于让调用者等待
+    final completer = Completer<void>();
+    _pendingCompleter = completer;
+
+    _debounceTimer = Timer(const Duration(milliseconds: 500), () async {
+      try {
+        // 优先使用 Platform Channel 直接调用 Glance updateAll()
+        try {
+          await _androidChannel.invokeMethod('updateWidgets');
+        } catch (e) {
+          // 回退到广播方式
+          await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
+          await HomeWidget.updateWidget(androidName: androidTodayReceiver);
+        }
+      } catch (e) {
+        debugPrint("Widget Android Update Error: $e");
+      } finally {
+        if (!completer.isCompleted) {
+          completer.complete();
+        }
+      }
+    });
+
+    return completer.future;
   }
 
   /// 清空 Widget 和 Watch 的课表数据（退出登录时调用）
@@ -68,23 +103,23 @@ class WidgetService {
         await HomeWidget.setAppGroupId(appGroupId);
       }
 
-      // 清除 App Group UserDefaults 中的课表数据
       await HomeWidget.saveWidgetData('full_schedule_json', null);
 
-      // 刷新所有 Widget 使其显示空状态
       if (Platform.isIOS) {
         await HomeWidget.updateWidget(iOSName: iOSWidgetKind);
         await HomeWidget.updateWidget(iOSName: upcomingCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: todayCourseWidgetKind);
         await HomeWidget.updateWidget(iOSName: lockScreenWidgetKind);
-        // WatchSessionManager 会通过 3 秒轮询检测到数据变化并同步到 Watch
       } else if (Platform.isAndroid) {
-        await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
-        await HomeWidget.updateWidget(androidName: androidTodayReceiver);
+        try {
+          await _androidChannel.invokeMethod('updateWidgets');
+        } catch (e) {
+          await HomeWidget.updateWidget(androidName: androidUpcomingReceiver);
+          await HomeWidget.updateWidget(androidName: androidTodayReceiver);
+        }
       }
     } catch (e) {
       debugPrint("Widget Clear Error: $e");
     }
   }
 }
-

@@ -450,9 +450,7 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> addCustomCourse(CustomCourse course) async {
     customCourses.add(course);
     await saveCustomCourses();
-    if (!kIsWeb) {
-      await WidgetService.syncToWidget(this);
-    }
+    if (!kIsWeb) await WidgetService.syncToWidget(this);
     triggerToast("行程已添加");
   }
 
@@ -461,43 +459,43 @@ class ScheduleViewModel extends ChangeNotifier {
     if (index != -1) {
       customCourses[index] = course;
       await saveCustomCourses();
-      await WidgetService.syncToWidget(this);
+      if (!kIsWeb) await WidgetService.syncToWidget(this);
       triggerToast("行程已更新");
     }
   }
 
-  void deleteCustomCourseAt(int index) {
+  Future<void> deleteCustomCourseAt(int index) async {
     if (index < 0 || index >= customCourses.length) return;
     customCourses.removeAt(index);
-    saveCustomCourses();
+    await saveCustomCourses();
     notifyListeners();
+    if (!kIsWeb) await WidgetService.syncToWidget(this);
   }
 
-  void deleteCustomCourseById(String id) {
+  Future<void> deleteCustomCourseById(String id) async {
     final index = customCourses.indexWhere((e) => e.id == id);
     if (index != -1) {
       customCourses.removeAt(index);
-      saveCustomCourses();
+      await saveCustomCourses();
       notifyListeners();
+      if (!kIsWeb) await WidgetService.syncToWidget(this);
     }
   }
 
   Future<void> clearAllCustomCourses() async {
     customCourses.clear();
     await saveCustomCourses();
-    await WidgetService.syncToWidget(this);
+    if (!kIsWeb) await WidgetService.syncToWidget(this);
     triggerToast("自定义行程已清空");
   }
 
+  /// 仅保存自定义课程到本地，不触发小组件刷新
   Future<void> saveCustomCourses() async {
     final prefs = await SharedPreferences.getInstance();
     final String data = jsonEncode(
       customCourses.map((e) => e.toJson()).toList(),
     );
     await prefs.setString(kCustomCoursesKey, data);
-    if (!kIsWeb) {
-      await WidgetService.syncToWidget(this);
-    }
   }
 
   Future<void> loadCustomCourses() async {
@@ -508,9 +506,7 @@ class ScheduleViewModel extends ChangeNotifier {
       customCourses = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
       notifyListeners();
     }
-    if (!kIsWeb) {
-      await WidgetService.syncToWidget(this);
-    }
+    // 不在这里 sync，由 startup() 统一处理
   }
 
   List<CourseInstance> allCourses(int week) {

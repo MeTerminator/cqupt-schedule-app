@@ -2,6 +2,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_CALENDAR" />
     <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
     <application
         android:label="重邮课表"
         android:name="${applicationName}"
@@ -29,18 +30,20 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".UpcomingWidgetReceiver" android:exported="true">
+        <receiver android:name=".UpcomingWidgetReceiver" android:exported="true" android:label="临近课程">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="es.antonborri.home_widget.action.UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/widget_upcoming_info" />
         </receiver>
 
-        <receiver android:name=".TodayWidgetReceiver" android:exported="true">
+        <receiver android:name=".TodayWidgetReceiver" android:exported="true" android:label="今日课程">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="es.antonborri.home_widget.action.UPDATE" />
             </intent-filter>
             <meta-data
                 android:name="android.appwidget.provider"
