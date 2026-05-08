@@ -347,7 +347,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                             child: Divider(color: Colors.white),
                           ),
                           Text(
-                            '$temp°',
+                            '$temp°C',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 44,
@@ -355,7 +355,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                             ),
                           ),
                           Text(
-                            '$weatherDesc 最高$todayForecastFrom° 最低$todayForecastTo°',
+                            '$weatherDesc 最高$todayForecastFrom°C 最低$todayForecastTo°C',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -468,7 +468,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                               children: [
                                 _buildIndexItem(
                                   '体感',
-                                  '$feelsLike°',
+                                  '$feelsLike°C',
                                   showRight: true,
                                   showBottom: true,
                                 ),
@@ -491,8 +491,8 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                                   showBottom: true,
                                 ),
                                 _buildIndexItem(
-                                  '气压',
-                                  '$pressure hPa',
+                                  '气压 (hPa)',
+                                  pressure,
                                   showRight: true,
                                   showBottom: false,
                                 ),
