@@ -35,18 +35,20 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       });
     });
 
-    // 每10分钟刷新一次数据
-    _refreshTimer = Timer.periodic(const Duration(minutes: 10), (timer) {
+    // 每2分钟刷新一次数据
+    _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
       _viewModel.refreshAll();
     });
 
     // 全屏沉浸模式
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     // 强制黑色背景的状态栏
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
+    SystemChrome.setSystemUIOverlayStyle(
+      const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+      ),
+    );
   }
 
   @override
@@ -102,7 +104,10 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
         final fixedHeight = 400.0;
         final availableHeight = totalHeight - fixedHeight;
         // 每项高度估算约为 82，确保在主流手机上能显示约 5 节课
-        final itemsToTake = (availableHeight / 82).floor().clamp(0, list.length);
+        final itemsToTake = (availableHeight / 82).floor().clamp(
+          0,
+          list.length,
+        );
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
@@ -116,7 +121,9 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
               _buildCurriculumHeader(svm),
               const SizedBox(height: 8),
               _buildTopCard(vm, svm, top),
-              ...list.take(itemsToTake).map((c) => _buildCourseItem(vm, svm, c)),
+              ...list
+                  .take(itemsToTake)
+                  .map((c) => _buildCourseItem(vm, svm, c)),
             ],
           ),
         );
@@ -135,7 +142,10 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
         // 横屏模式估算：Header(40) + TopCard(140) + Padding(50) = 230
         final fixedHeight = 200.0;
         final availableHeight = totalHeight - fixedHeight;
-        final itemsToTake = (availableHeight / 82).floor().clamp(0, list.length);
+        final itemsToTake = (availableHeight / 82).floor().clamp(
+          0,
+          list.length,
+        );
 
         return Padding(
           padding: const EdgeInsets.all(24.0),
@@ -151,7 +161,9 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
                     _buildCurriculumHeader(svm),
                     const SizedBox(height: 12),
                     _buildTopCard(vm, svm, top),
-                    ...list.take(itemsToTake).map((c) => _buildCourseItem(vm, svm, c)),
+                    ...list
+                        .take(itemsToTake)
+                        .map((c) => _buildCourseItem(vm, svm, c)),
                   ],
                 ),
               ),
@@ -192,29 +204,87 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
     );
   }
 
+  String _getWeatherDescription(String code) {
+    const Map<String, String> codes = {
+      '0': '晴',
+      '1': '多云',
+      '2': '阴',
+      '3': '阵雨',
+      '4': '雷阵雨',
+      '5': '雷阵雨伴有冰雹',
+      '6': '雨夹雪',
+      '7': '小雨',
+      '8': '中雨',
+      '9': '大雨',
+      '10': '暴雨',
+      '11': '大暴雨',
+      '12': '特大暴雨',
+      '13': '阵雪',
+      '14': '小雪',
+      '15': '中雪',
+      '16': '大雪',
+      '17': '暴雪',
+      '18': '雾',
+      '19': '冻雨',
+      '20': '沙尘暴',
+      '21': '小到中雨',
+      '22': '中到大雨',
+      '23': '大到暴雨',
+      '24': '暴雨到大暴雨',
+      '25': '大暴雨到特大暴雨',
+      '26': '小到中雪',
+      '27': '中到大雪',
+      '28': '大到暴雪',
+      '29': '浮尘',
+      '30': '扬沙',
+      '31': '强沙尘暴',
+      '53': '霾',
+    };
+    return codes[code] ?? '未知';
+  }
+
+  String _getWindDirText(int deg) {
+    const directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
+    return directions[(deg ~/ 45) % 8];
+  }
+
   Widget _buildWeather(DesktopWidgetViewModel vm) {
     if (vm.weatherData == null) return const SizedBox.shrink();
 
     final data = vm.weatherData!;
+    final current = data['current'] ?? {};
+    final wind = current['wind'] ?? {};
+
+    final String code = current['weather']?.toString() ?? "0";
+    final String weatherDesc = _getWeatherDescription(code);
+    final String temp = current['temperature']?['value']?.toString() ?? "-";
+    final String humidity = current['humidity']?['value']?.toString() ?? "-";
+
+    final int windDeg =
+        int.tryParse(wind['direction']?['value']?.toString() ?? '0') ?? 0;
+    final double windSpeedRaw =
+        double.tryParse(wind['speed']?['value']?.toString() ?? '0') ?? 0;
+    final int windLevel = (windSpeedRaw / 3.6).round();
+
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _weatherText("${data['weather'] ?? "-"}"),
+            _weatherText(weatherDesc),
             const SizedBox(width: 12),
-            _weatherText("${data['temperature_float'] ?? "-"}℃"),
+            _weatherText("$temp℃"),
             const SizedBox(width: 12),
-            _weatherText("${data['humidity_float'] ?? "-"}%"),
+            _weatherText("$humidity%"),
           ],
         ),
         const SizedBox(height: 2),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _weatherText("${data['winddirection'] ?? "-"}风"),
+            _weatherText("${_getWindDirText(windDeg)}风"),
             const SizedBox(width: 12),
-            _weatherText("${data['windpower'] ?? "-"}级"),
+            _weatherText("$windLevel级"),
           ],
         ),
       ],
@@ -286,10 +356,10 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
     final isNow = svm.isCourseOngoing(top);
     final isTomorrowVal = vm.isTomorrow(top, svm);
 
-    final String timeLabel =
-        isNow ? "进行中" : (isTomorrowVal ? "明日未开始" : "未开始");
-    final String timeText =
-        isNow ? vm.formatRemainingTime(top) : vm.formatTimeDiff(top, svm);
+    final String timeLabel = isNow ? "进行中" : (isTomorrowVal ? "明日未开始" : "未开始");
+    final String timeText = isNow
+        ? vm.formatRemainingTime(top)
+        : vm.formatTimeDiff(top, svm);
 
     return Container(
       width: double.infinity,
@@ -306,7 +376,11 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
               Expanded(
                 child: Text(
                   top.course,
-                  style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -335,12 +409,20 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
           const SizedBox(height: 4),
           Text(
             "${top.startTime} - ${top.endTime} · ${top.location}",
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             timeLabel,
-            style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           ),
           if (isNow) ...[
             const SizedBox(height: 12),

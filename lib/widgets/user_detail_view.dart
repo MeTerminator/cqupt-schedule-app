@@ -5,6 +5,7 @@ import '../views/course_color_management_view.dart';
 import '../views/custom_courses_view.dart';
 import '../views/theme_settings_view.dart';
 import '../views/desktop_widget_view.dart';
+import '../views/desk_dock_widget_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -172,16 +173,30 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       _buildSection(context, '更多功能', [
                         ListTile(
                           leading: const Icon(Icons.monitor),
-                          title: const Text('桌面摆件'),
+                          title: const Text('桌面摆件 (1)'),
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder:
-                                    (context) => DesktopWidgetView(
-                                      studentId: widget.viewModel.currentId,
-                                    ),
+                                builder: (context) => DesktopWidgetView(
+                                  studentId: widget.viewModel.currentId,
+                                ),
+                              ),
+                            ).then((_) => setState(() {}));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.dock),
+                          title: const Text('桌面摆件 (2)'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DeskDockWidgetView(
+                                  studentId: widget.viewModel.currentId,
+                                ),
                               ),
                             ).then((_) => setState(() {}));
                           },

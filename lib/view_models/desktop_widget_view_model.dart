@@ -24,8 +24,9 @@ class DesktopWidgetViewModel extends ChangeNotifier {
 
   Future<void> fetchWeather() async {
     try {
-      final response =
-          await http.get(Uri.parse('https://cqupt.ishub.top/api/weather.json'));
+      final response = await http.get(
+        Uri.parse('https://cqupt.ishub.top/api/weather-mi.json'),
+      );
       if (response.statusCode == 200) {
         weatherData = json.decode(utf8.decode(response.bodyBytes));
       }
@@ -67,12 +68,14 @@ class DesktopWidgetViewModel extends ChangeNotifier {
     candidates.addAll(svm.allCourses(currentWeek));
     candidates.addAll(svm.allCourses(currentWeek + 1));
 
-    List<CourseInstance> todayAndTomorrow =
-        candidates.where((c) => isToday(c, svm) || isTomorrow(c, svm)).toList();
+    List<CourseInstance> todayAndTomorrow = candidates
+        .where((c) => isToday(c, svm) || isTomorrow(c, svm))
+        .toList();
 
     // 2. Check Ongoing
-    final ongoing =
-        todayAndTomorrow.where((c) => svm.isCourseOngoing(c)).toList();
+    final ongoing = todayAndTomorrow
+        .where((c) => svm.isCourseOngoing(c))
+        .toList();
     if (ongoing.isNotEmpty) {
       return ongoing.first;
     }
@@ -110,20 +113,21 @@ class DesktopWidgetViewModel extends ChangeNotifier {
     candidates.addAll(svm.allCourses(currentWeek + 1));
 
     // Filter for today/tomorrow only, and after "now"
-    var futureCourses =
-        candidates.where((c) {
-          if (c.id == top.id) return false;
+    var futureCourses = candidates.where((c) {
+      if (c.id == top.id) return false;
 
-          if (isToday(c, svm)) {
-            return _timeToMinutes(c.startTime) > nowMinutes;
-          }
-          return isTomorrow(c, svm);
-        }).toList();
+      if (isToday(c, svm)) {
+        return _timeToMinutes(c.startTime) > nowMinutes;
+      }
+      return isTomorrow(c, svm);
+    }).toList();
 
     // Sort
     futureCourses.sort((a, b) {
-      final int aWeight = (a.week * 10 + a.day) * 10000 + _timeToMinutes(a.startTime);
-      final int bWeight = (b.week * 10 + b.day) * 10000 + _timeToMinutes(b.startTime);
+      final int aWeight =
+          (a.week * 10 + a.day) * 10000 + _timeToMinutes(a.startTime);
+      final int bWeight =
+          (b.week * 10 + b.day) * 10000 + _timeToMinutes(b.startTime);
       return aWeight.compareTo(bWeight);
     });
 
@@ -142,21 +146,21 @@ class DesktopWidgetViewModel extends ChangeNotifier {
     final now = DateTime.now();
     final nowMinutes = now.hour * 60 + now.minute;
     final beginMinutes = _timeToMinutes(course.startTime);
-    
+
     final realWeek = svm.calculateCurrentRealWeek();
     final isTomorrowMonthDay = svm.isTomorrowCourse(course);
-    
+
     int diff;
     if (course.week == realWeek && course.day == now.weekday) {
-       diff = beginMinutes - nowMinutes;
+      diff = beginMinutes - nowMinutes;
     } else {
-       // Offset calculation
-       final dayDiff = (course.week - realWeek) * 7 + (course.day - now.weekday);
-       diff = dayDiff * 1440 + beginMinutes - nowMinutes;
+      // Offset calculation
+      final dayDiff = (course.week - realWeek) * 7 + (course.day - now.weekday);
+      diff = dayDiff * 1440 + beginMinutes - nowMinutes;
     }
-    
+
     if (diff < 0) diff = 0;
-    
+
     final h = diff ~/ 60;
     final m = diff % 60;
     return "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}";
@@ -166,10 +170,10 @@ class DesktopWidgetViewModel extends ChangeNotifier {
     final now = DateTime.now();
     final nowMinutes = now.hour * 60 + now.minute;
     final endMinutes = _timeToMinutes(course.endTime);
-    
+
     int diff = endMinutes - nowMinutes;
     if (diff < 0) diff = 0;
-    
+
     final h = diff ~/ 60;
     final m = diff % 60;
     return "${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}";
@@ -180,7 +184,7 @@ class DesktopWidgetViewModel extends ChangeNotifier {
     final nowMinutes = (now.hour * 60 + now.minute).toDouble();
     final begin = _timeToMinutes(course.startTime).toDouble();
     final end = _timeToMinutes(course.endTime).toDouble();
-    
+
     if (end <= begin) return 0.0;
     final progress = (nowMinutes - begin) / (end - begin);
     return progress.clamp(0.0, 1.0);
