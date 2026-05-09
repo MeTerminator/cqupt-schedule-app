@@ -21,7 +21,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
   late DesktopWidgetViewModel _viewModel;
   late Timer _clockTimer;
   late Timer _refreshTimer;
-  DateTime _now = DateTime.now();
+  final ValueNotifier<DateTime> _timeNotifier = ValueNotifier(DateTime.now());
 
   @override
   void initState() {
@@ -30,9 +30,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
     _viewModel.refreshAll();
 
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      setState(() {
-        _now = DateTime.now();
-      });
+      _timeNotifier.value = DateTime.now();
     });
 
     _refreshTimer = Timer.periodic(const Duration(minutes: 2), (timer) {
@@ -64,6 +62,276 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
       DeviceOrientation.landscapeRight,
     ]);
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black, // Dark mode default
+      body: ChangeNotifierProvider.value(
+        value: _viewModel,
+        child: Consumer<DesktopWidgetViewModel>(
+          builder: (context, vm, child) {
+            if (vm.isLoading) {
+              return const Center(
+                child: CircularProgressIndicator(color: Colors.white),
+              );
+            }
+
+            return SafeArea(
+              child: OrientationBuilder(
+                builder: (context, orientation) {
+                  return _buildDeskDockLayout(vm);
+                },
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeskDockLayout(DesktopWidgetViewModel vm) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Column(
+          children: [
+            // Top Section
+            Expanded(
+              flex: 4,
+              child: Row(
+                children: [
+                  // Time Area (3 cols out of 5)
+                  Expanded(
+                    flex: 3,
+                    child: _ClockArea(timeNotifier: _timeNotifier),
+                  ),
+                  // Sidebar 1 (1 col out of 5)
+                  Expanded(
+                    flex: 1,
+                    child: _SidebarLeft(vm: vm, timeNotifier: _timeNotifier),
+                  ),
+                  // Sidebar 2 (1 col out of 5)
+                  Expanded(
+                    flex: 1,
+                    child: _SidebarRight(vm: vm),
+                  ),
+                ],
+              ),
+            ),
+            // Bottom Bar Section
+            const Expanded(
+              flex: 1,
+              child: _BottomCourseBar(),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// --- Specialized Sub-widgets for performance ---
+
+class _ClockArea extends StatelessWidget {
+  final ValueNotifier<DateTime> timeNotifier;
+  const _ClockArea({required this.timeNotifier});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          right: BorderSide(color: Colors.white, width: 0.5),
+        ),
+      ),
+      child: Center(
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: ValueListenableBuilder<DateTime>(
+            valueListenable: timeNotifier,
+            builder: (context, now, child) {
+              return Text(
+                DateFormat('HH:mm').format(now),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 180,
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: [FontFeature.tabularFigures()],
+                  letterSpacing: -5,
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarLeft extends StatelessWidget {
+  final DesktopWidgetViewModel vm;
+  final ValueNotifier<DateTime> timeNotifier;
+
+  const _SidebarLeft({required this.vm, required this.timeNotifier});
+
+  @override
+  Widget build(BuildContext context) {
+    final data = vm.weatherData ?? {};
+    final current = data['current'] ?? {};
+    final forecastDaily = data['forecastDaily'] ?? {};
+
+    final temp = current['temperature']?['value']?.toString() ?? '--';
+    final weatherDesc =
+        current['weatherDesc']?.toString() ??
+        _getWeatherDescription(current['weather']?.toString() ?? '0');
+
+    List temperatures = forecastDaily['temperature']?['value'] ?? [];
+    final todayForecastFrom = temperatures.isNotEmpty
+        ? temperatures[0]['from']
+        : '--';
+    final todayForecastTo = temperatures.isNotEmpty
+        ? temperatures[0]['to']
+        : '--';
+
+    final aqiValue = data['aqi']?['aqi']?.toString() ?? '--';
+    final minutelyDesc =
+        data['minutely']?['probability']?['probabilityDesc']?.toString() ??
+        data['minutely']?['precipitation']?['shortDescription']?.toString() ??
+        '';
+
+    List<String> tags = [];
+    if (aqiValue != '--') tags.add('AQI $aqiValue');
+    if (data['aqi']?['aqiLevelName'] != null) {
+      tags.add(data['aqi']?['aqiLevelName']);
+    }
+    if (data['aqi']?['primary'] != null && data['aqi']?['primary'] != '') {
+      tags.add('首要:${data['aqi']?['primary']}');
+    }
+    if (minutelyDesc.contains('雨')) tags.add('有雨');
+    if (minutelyDesc.contains('雪')) tags.add('有雪');
+    final alerts = data['alerts'] as List? ?? [];
+    for (var alert in alerts) {
+      if (alert['type'] != null) tags.add(alert['type'].toString());
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(
+          right: BorderSide(color: Colors.white, width: 0.5),
+        ),
+      ),
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ValueListenableBuilder<DateTime>(
+            valueListenable: timeNotifier,
+            builder: (context, now, child) {
+              final weekdays = [
+                '星期日',
+                '星期一',
+                '星期二',
+                '星期三',
+                '星期四',
+                '星期五',
+                '星期六',
+              ];
+              final solar = Solar.fromDate(now);
+              final lunar = Lunar.fromSolar(solar);
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    DateFormat('yyyy/MM/dd').format(now),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  Text(
+                    weekdays[now.weekday % 7],
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '农历 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}',
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                  Text(
+                    '${lunar.getYearInGanZhi()}年',
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                  Text(
+                    '${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日',
+                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                  ),
+                ],
+              );
+            },
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 1),
+            child: Divider(color: Colors.white),
+          ),
+          Text(
+            '$temp°C',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 44,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+          Text(
+            '$weatherDesc 最高$todayForecastFrom°C 最低$todayForecastTo°C',
+            style: const TextStyle(color: Colors.white, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 4,
+            runSpacing: 4,
+            children: tags
+                .map(
+                  (t) => Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[800],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      t,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 11,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+          const Spacer(),
+          if (minutelyDesc.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(top: 4.0),
+              child: Text(
+                minutelyDesc,
+                style: const TextStyle(color: Colors.white70, fontSize: 11),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 
   String _getWeatherDescription(String code) {
@@ -104,50 +372,15 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
     };
     return codes[code] ?? '未知';
   }
+}
 
-  String _getWindDirText(int deg) {
-    const directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
-    return directions[(deg ~/ 45) % 8];
-  }
+class _SidebarRight extends StatelessWidget {
+  final DesktopWidgetViewModel vm;
+
+  const _SidebarRight({required this.vm});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black, // Dark mode default
-      body: ChangeNotifierProvider.value(
-        value: _viewModel,
-        child: Consumer<DesktopWidgetViewModel>(
-          builder: (context, vm, child) {
-            if (vm.isLoading) {
-              return const Center(
-                child: CircularProgressIndicator(color: Colors.white),
-              );
-            }
-
-            return SafeArea(
-              child: OrientationBuilder(
-                builder: (context, orientation) {
-                  return _buildDeskDockLayout(vm);
-                },
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDeskDockLayout(DesktopWidgetViewModel vm) {
-    final svm = Provider.of<ScheduleViewModel>(context);
-    final topCourse = vm.getTopCourse(svm);
-    final listCourses = vm.getListCourses(svm);
-
-    List<CourseInstance> allCourses = [];
-    if (topCourse != null) {
-      allCourses.add(topCourse);
-    }
-    allCourses.addAll(listCourses);
-
     final data = vm.weatherData ?? {};
     final current = data['current'] ?? {};
     final forecastDaily = data['forecastDaily'] ?? {};
@@ -155,14 +388,8 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
         ? data['indices']['indices']
         : [];
 
-    // Weather - Current
-    final temp = current['temperature']?['value']?.toString() ?? '--';
-    final weatherDesc =
-        current['weatherDesc']?.toString() ??
-        _getWeatherDescription(current['weather']?.toString() ?? '0');
     final humidity = current['humidity']?['value']?.toString() ?? '--';
     final feelsLike = current['feelsLike']?['value']?.toString() ?? '--';
-
     final windDirVal =
         double.tryParse(
           current['wind']?['direction']?['value']?.toString() ?? '0',
@@ -176,22 +403,12 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
     final windLevel = (windSpeedVal / 3.6).round();
     final windDesc =
         current['wind']?['direction']?['desc']?.toString() ??
-        (_getWindDirText(windDirVal.round()) + '$windLevel级');
-
+        '${_getWindDirText(windDirVal.round())}${windLevel}级';
     final pressure = current['pressure']?['value']?.toString() ?? '--';
 
-    // Daily
     List temperatures = forecastDaily['temperature']?['value'] ?? [];
     List weathers = forecastDaily['weather']?['value'] ?? [];
     List sunRiseSet = forecastDaily['sunRiseSet']?['value'] ?? [];
-
-    final todayForecastFrom = temperatures.isNotEmpty
-        ? temperatures[0]['from']
-        : '--';
-    final todayForecastTo = temperatures.isNotEmpty
-        ? temperatures[0]['to']
-        : '--';
-    final aqiValue = data['aqi']?['aqi']?.toString() ?? '--';
 
     String sunset = '--:--';
     if (sunRiseSet.isNotEmpty && sunRiseSet[0]['to'] != null) {
@@ -201,7 +418,6 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
       } catch (_) {}
     }
 
-    // 3 Day Forecast
     List<Map<String, dynamic>> forecasts = [];
     final days = ['今天', '明天', '后天'];
     for (int i = 0; i < 3 && i < temperatures.length; i++) {
@@ -217,7 +433,6 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
       });
     }
 
-    // Indices
     String uvIndex = '--';
     if (indices is List) {
       for (var idx in indices) {
@@ -228,417 +443,85 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
       }
     }
 
-    // Tags
-    List<String> tags = [];
-    final minutelyDesc =
-        data['minutely']?['probability']?['probabilityDesc']?.toString() ??
-        data['minutely']?['precipitation']?['shortDescription']?.toString() ??
-        '';
-
-    if (aqiValue != '--') tags.add('AQI $aqiValue');
-    if (data['aqi']?['aqiLevelName'] != null)
-      tags.add(data['aqi']?['aqiLevelName']);
-    if (data['aqi']?['primary'] != null && data['aqi']?['primary'] != '')
-      tags.add('首要:${data['aqi']?['primary']}');
-    if (minutelyDesc.contains('雨')) tags.add('有雨');
-    if (minutelyDesc.contains('雪')) tags.add('有雪');
-
-    // Alerts tags
-    final alerts = data['alerts'] as List? ?? [];
-    for (var alert in alerts) {
-      if (alert['type'] != null) tags.add(alert['type'].toString());
-    }
-
-    // Lunar
-    final solar = Solar.fromDate(_now);
-    final lunar = Lunar.fromSolar(solar);
-    final weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // App container in React has flex rows/cols.
-        // We do 4 rows on top (Flex 4), 1 row on bottom (Flex 1) -> Actually Flex is fine.
-        return Column(
-          children: [
-            // Top Section
-            Expanded(
-              flex: 4,
-              child: Row(
-                children: [
-                  // Time Area (3 cols out of 5)
-                  Expanded(
-                    flex: 3,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          right: BorderSide(color: Colors.white, width: 0.5),
-                        ),
-                      ),
-                      child: Center(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
+    return Container(
+      padding: const EdgeInsets.all(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Column(
+            children: forecasts
+                .map(
+                  (f) => Padding(
+                    padding: const EdgeInsets.only(bottom: 2),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: 32,
                           child: Text(
-                            DateFormat('HH:mm').format(_now),
+                            f['day'],
                             style: const TextStyle(
                               color: Colors.white,
-                              fontSize: 180,
-                              fontWeight: FontWeight.w800,
-                              fontFeatures: [FontFeature.tabularFigures()],
-                              letterSpacing: -5,
+                              fontSize: 13,
                             ),
                           ),
                         ),
-                      ),
-                    ),
-                  ),
-                  // Sidebar 1 (1 col out of 5)
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          right: BorderSide(color: Colors.white, width: 0.5),
-                        ),
-                      ),
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            DateFormat('yyyy/MM/dd').format(_now),
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            weekdays[_now.weekday % 7],
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            '农历 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            '${lunar.getYearInGanZhi()}年',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          Text(
-                            '${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 14,
-                            ),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 1),
-                            child: Divider(color: Colors.white),
-                          ),
-                          Text(
-                            '$temp°C',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 44,
-                              fontWeight: FontWeight.w800,
-                              height: 1.2,
-                            ),
-                          ),
-                          Text(
-                            '$weatherDesc 最高$todayForecastFrom°C 最低$todayForecastTo°C',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: tags
-                                .map(
-                                  (t) => Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 6,
-                                      vertical: 2,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[800],
-                                      borderRadius: BorderRadius.circular(4),
-                                    ),
-                                    child: Text(
-                                      t,
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          const Spacer(),
-                          if (minutelyDesc.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 4.0),
-                              child: Text(
-                                minutelyDesc,
-                                style: const TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 11,
-                                ),
+                        Expanded(
+                          child: Center(
+                            child: Text(
+                              f['weather'],
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
                               ),
                             ),
-                        ],
-                      ),
+                          ),
+                        ),
+                        Text(
+                          '${f['low']}° - ${f['high']}°',
+                          style: const TextStyle(
+                            color: Colors.grey,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  // Sidebar 2 (1 col out of 5)
-                  Expanded(
-                    flex: 1,
-                    child: Container(
-                      decoration: const BoxDecoration(),
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Column(
-                            children: forecasts
-                                .map(
-                                  (f) => Padding(
-                                    padding: const EdgeInsets.only(bottom: 2),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        SizedBox(
-                                          width: 32,
-                                          child: Text(
-                                            f['day'],
-                                            style: const TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 13,
-                                            ),
-                                          ),
-                                        ),
-                                        Expanded(
-                                          child: Center(
-                                            child: Text(
-                                              f['weather'],
-                                              style: const TextStyle(
-                                                color: Colors.white,
-                                                fontSize: 13,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        Text(
-                                          '${f['low']}° - ${f['high']}°',
-                                          style: const TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 4),
-                            child: Divider(color: Colors.white),
-                          ),
-                          Expanded(
-                            child: GridView.count(
-                              crossAxisCount: 2,
-                              childAspectRatio: 1.2,
-                              physics: const NeverScrollableScrollPhysics(),
-                              children: [
-                                _buildIndexItem(
-                                  '体感',
-                                  '$feelsLike°C',
-                                  showRight: true,
-                                  showBottom: true,
-                                ),
-                                _buildIndexItem(
-                                  '湿度',
-                                  '$humidity%',
-                                  showRight: false,
-                                  showBottom: true,
-                                ),
-                                _buildIndexItem(
-                                  '紫外线',
-                                  uvIndex,
-                                  showRight: true,
-                                  showBottom: true,
-                                ),
-                                _buildIndexItem(
-                                  '风向',
-                                  windDesc,
-                                  showRight: false,
-                                  showBottom: true,
-                                ),
-                                _buildIndexItem(
-                                  '气压 (hPa)',
-                                  pressure,
-                                  showRight: true,
-                                  showBottom: false,
-                                ),
-                                _buildIndexItem(
-                                  '日落',
-                                  sunset,
-                                  showRight: false,
-                                  showBottom: false,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                )
+                .toList(),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 4),
+            child: Divider(color: Colors.white),
+          ),
+          Expanded(
+            child: GridView.count(
+              crossAxisCount: 2,
+              childAspectRatio: 1.2,
+              physics: const NeverScrollableScrollPhysics(),
+              children: [
+                _buildIndexItem('体感', '$feelsLike°C', true, true),
+                _buildIndexItem('湿度', '$humidity%', false, true),
+                _buildIndexItem('紫外线', uvIndex, true, true),
+                _buildIndexItem('风向', windDesc, false, true),
+                _buildIndexItem('气压', pressure, true, false),
+                _buildIndexItem('日落', sunset, false, false),
+              ],
             ),
-            // Bottom Bar Section
-            Expanded(
-              flex: 1,
-              child: Container(
-                decoration: const BoxDecoration(
-                  border: Border(
-                    top: BorderSide(color: Colors.white, width: 0.5),
-                  ),
-                ),
-                child: allCourses.isNotEmpty
-                    ? Row(
-                        children: allCourses.take(5).map((c) {
-                          bool isActive = false;
-                          if (topCourse != null &&
-                              c.id == topCourse.id &&
-                              svm.isCourseOngoing(c)) {
-                            isActive = true;
-                          }
-                          bool isTomorrow = vm.isTomorrow(c, svm);
-
-                          return Expanded(
-                            child: Container(
-                              decoration: BoxDecoration(
-                                border: const Border(
-                                  right: BorderSide(
-                                    color: Colors.white,
-                                    width: 0.5,
-                                  ),
-                                ),
-                                color: isActive
-                                    ? Colors.grey[900]
-                                    : Colors.black,
-                              ),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 16,
-                                vertical: 8,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          c.course,
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      if (isTomorrow)
-                                        Container(
-                                          margin: const EdgeInsets.only(
-                                            left: 4,
-                                          ),
-                                          width: 6,
-                                          height: 6,
-                                          decoration: const BoxDecoration(
-                                            color: Colors.white,
-                                            shape: BoxShape.circle,
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    '${c.startTime}-${c.endTime} | ${c.location}',
-                                    style: const TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  if (isActive) ...[
-                                    const SizedBox(height: 6),
-                                    Container(
-                                      height: 6,
-                                      width: double.infinity,
-                                      color: Colors.grey[800],
-                                      child: FractionallySizedBox(
-                                        alignment: Alignment.centerLeft,
-                                        widthFactor: vm.getProgress(c),
-                                        child: Container(color: Colors.white),
-                                      ),
-                                    ),
-                                  ],
-                                ],
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      )
-                    : const Center(
-                        child: Text(
-                          '暂无后续课程',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildIndexItem(
-    String label,
-    String value, {
-    required bool showRight,
-    required bool showBottom,
-  }) {
+  Widget _buildIndexItem(String label, String value, bool right, bool bottom) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
-          right: showRight
+          right: right
               ? const BorderSide(color: Colors.white, width: 0.5)
               : BorderSide.none,
-          bottom: showBottom
+          bottom: bottom
               ? const BorderSide(color: Colors.white, width: 0.5)
               : BorderSide.none,
         ),
@@ -659,6 +542,118 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  String _getWeatherDescription(String code) {
+    const Map<String, String> codes = {'0': '晴', '1': '多云', '2': '阴', '3': '阵雨'};
+    return codes[code] ?? '未知';
+  }
+
+  String _getWindDirText(int deg) {
+    const directions = ["北", "东北", "东", "东南", "南", "西南", "西", "西北"];
+    return directions[(deg ~/ 45) % 8];
+  }
+}
+
+class _BottomCourseBar extends StatelessWidget {
+  const _BottomCourseBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final vm = Provider.of<DesktopWidgetViewModel>(context);
+    final svm = Provider.of<ScheduleViewModel>(context);
+    final topCourse = vm.getTopCourse(svm);
+    final listCourses = vm.getListCourses(svm);
+
+    List<CourseInstance> allCourses = [];
+    if (topCourse != null) allCourses.add(topCourse);
+    allCourses.addAll(listCourses);
+
+    if (allCourses.isEmpty) {
+      return const Center(
+        child: Text(
+          '暂无后续课程',
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: Colors.white, width: 0.5)),
+      ),
+      child: Row(
+        children: allCourses.take(5).map((c) {
+          bool isActive = topCourse != null && c.id == topCourse.id && svm.isCourseOngoing(c);
+          bool isTomorrow = vm.isTomorrow(c, svm);
+
+          return Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                border: const Border(
+                  right: BorderSide(color: Colors.white, width: 0.5),
+                ),
+                color: isActive ? Colors.grey[900] : Colors.black,
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          c.course,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      if (isTomorrow)
+                        Container(
+                          margin: const EdgeInsets.only(left: 4),
+                          width: 6,
+                          height: 6,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '${c.startTime}-${c.endTime} | ${c.location}',
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                  if (isActive) ...[
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 6,
+                      width: double.infinity,
+                      color: Colors.grey[800],
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: vm.getProgress(c),
+                        child: Container(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          );
+        }).toList(),
       ),
     );
   }
