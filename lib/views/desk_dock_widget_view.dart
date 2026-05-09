@@ -343,7 +343,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                             ),
                           ),
                           const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 4),
+                            padding: EdgeInsets.symmetric(vertical: 1),
                             child: Divider(color: Colors.white),
                           ),
                           Text(
@@ -352,6 +352,7 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                               color: Colors.white,
                               fontSize: 44,
                               fontWeight: FontWeight.w800,
+                              height: 1.2,
                             ),
                           ),
                           Text(
