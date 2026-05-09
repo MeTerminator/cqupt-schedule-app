@@ -94,6 +94,9 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
   Widget _buildDeskDockLayout(DesktopWidgetViewModel vm) {
     return LayoutBuilder(
       builder: (context, constraints) {
+        // Base width for scaling is 800 (standard phone landscape)
+        final double scale = (constraints.maxWidth / 800).clamp(0.8, 2.0);
+
         return Column(
           children: [
             // Top Section
@@ -104,26 +107,30 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
                   // Time Area (3 cols out of 5)
                   Expanded(
                     flex: 3,
-                    child: _ClockArea(timeNotifier: _timeNotifier),
+                    child: _ClockArea(
+                      timeNotifier: _timeNotifier,
+                      scale: scale,
+                    ),
                   ),
                   // Sidebar 1 (1 col out of 5)
                   Expanded(
                     flex: 1,
-                    child: _SidebarLeft(vm: vm, timeNotifier: _timeNotifier),
+                    child: _SidebarLeft(
+                      vm: vm,
+                      timeNotifier: _timeNotifier,
+                      scale: scale,
+                    ),
                   ),
                   // Sidebar 2 (1 col out of 5)
                   Expanded(
                     flex: 1,
-                    child: _SidebarRight(vm: vm),
+                    child: _SidebarRight(vm: vm, scale: scale),
                   ),
                 ],
               ),
             ),
             // Bottom Bar Section
-            const Expanded(
-              flex: 1,
-              child: _BottomCourseBar(),
-            ),
+            Expanded(flex: 1, child: _BottomCourseBar(scale: scale)),
           ],
         );
       },
@@ -135,33 +142,35 @@ class _DeskDockWidgetViewState extends State<DeskDockWidgetView> {
 
 class _ClockArea extends StatelessWidget {
   final ValueNotifier<DateTime> timeNotifier;
-  const _ClockArea({required this.timeNotifier});
+  final double scale;
+  const _ClockArea({required this.timeNotifier, required this.scale});
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        border: Border(
-          right: BorderSide(color: Colors.white, width: 0.5),
-        ),
+        border: Border(right: BorderSide(color: Colors.white, width: 0.5)),
       ),
       child: Center(
-        child: FittedBox(
-          fit: BoxFit.scaleDown,
-          child: ValueListenableBuilder<DateTime>(
-            valueListenable: timeNotifier,
-            builder: (context, now, child) {
-              return Text(
-                DateFormat('HH:mm').format(now),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 180,
-                  fontWeight: FontWeight.w800,
-                  fontFeatures: [FontFeature.tabularFigures()],
-                  letterSpacing: -5,
-                ),
-              );
-            },
+        child: Padding(
+          padding: EdgeInsets.all(20 * scale),
+          child: FittedBox(
+            fit: BoxFit.contain, // Fill available space
+            child: ValueListenableBuilder<DateTime>(
+              valueListenable: timeNotifier,
+              builder: (context, now, child) {
+                return Text(
+                  DateFormat('HH:mm').format(now),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 200, // Large base size for FittedBox
+                    fontWeight: FontWeight.w800,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                    letterSpacing: -5 * scale,
+                  ),
+                );
+              },
+            ),
           ),
         ),
       ),
@@ -172,8 +181,13 @@ class _ClockArea extends StatelessWidget {
 class _SidebarLeft extends StatelessWidget {
   final DesktopWidgetViewModel vm;
   final ValueNotifier<DateTime> timeNotifier;
+  final double scale;
 
-  const _SidebarLeft({required this.vm, required this.timeNotifier});
+  const _SidebarLeft({
+    required this.vm,
+    required this.timeNotifier,
+    required this.scale,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -217,11 +231,9 @@ class _SidebarLeft extends StatelessWidget {
 
     return Container(
       decoration: const BoxDecoration(
-        border: Border(
-          right: BorderSide(color: Colors.white, width: 0.5),
-        ),
+        border: Border(right: BorderSide(color: Colors.white, width: 0.5)),
       ),
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(8 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -245,74 +257,74 @@ class _SidebarLeft extends StatelessWidget {
                 children: [
                   Text(
                     DateFormat('yyyy/MM/dd').format(now),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 20 * scale,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
                     weekdays[now.weekday % 7],
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 16 * scale,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4 * scale),
                   Text(
                     '农历 ${lunar.getMonthInChinese()}月${lunar.getDayInChinese()}',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: Colors.white, fontSize: 14 * scale),
                   ),
                   Text(
                     '${lunar.getYearInGanZhi()}年',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: Colors.white, fontSize: 14 * scale),
                   ),
                   Text(
                     '${lunar.getMonthInGanZhi()}月 ${lunar.getDayInGanZhi()}日',
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
+                    style: TextStyle(color: Colors.white, fontSize: 14 * scale),
                   ),
                 ],
               );
             },
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 1),
-            child: Divider(color: Colors.white),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 2 * scale),
+            child: const Divider(color: Colors.white),
           ),
           Text(
             '$temp°C',
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 44,
+              fontSize: 44 * scale,
               fontWeight: FontWeight.w800,
-              height: 1.2,
+              height: 1.1,
             ),
           ),
           Text(
             '$weatherDesc 最高$todayForecastFrom°C 最低$todayForecastTo°C',
-            style: const TextStyle(color: Colors.white, fontSize: 12),
+            style: TextStyle(color: Colors.white, fontSize: 12 * scale),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: 6 * scale),
           Wrap(
-            spacing: 4,
-            runSpacing: 4,
+            spacing: 4 * scale,
+            runSpacing: 4 * scale,
             children: tags
                 .map(
                   (t) => Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 6,
-                      vertical: 2,
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6 * scale,
+                      vertical: 2 * scale,
                     ),
                     decoration: BoxDecoration(
                       color: Colors.grey[800],
-                      borderRadius: BorderRadius.circular(4),
+                      borderRadius: BorderRadius.circular(4 * scale),
                     ),
                     child: Text(
                       t,
-                      style: const TextStyle(
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 11,
+                        fontSize: 11 * scale,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -323,10 +335,10 @@ class _SidebarLeft extends StatelessWidget {
           const Spacer(),
           if (minutelyDesc.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.only(top: 4.0),
+              padding: EdgeInsets.only(top: 4.0 * scale),
               child: Text(
                 minutelyDesc,
-                style: const TextStyle(color: Colors.white70, fontSize: 11),
+                style: TextStyle(color: Colors.white70, fontSize: 11 * scale),
               ),
             ),
         ],
@@ -376,8 +388,9 @@ class _SidebarLeft extends StatelessWidget {
 
 class _SidebarRight extends StatelessWidget {
   final DesktopWidgetViewModel vm;
+  final double scale;
 
-  const _SidebarRight({required this.vm});
+  const _SidebarRight({required this.vm, required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -403,7 +416,7 @@ class _SidebarRight extends StatelessWidget {
     final windLevel = (windSpeedVal / 3.6).round();
     final windDesc =
         current['wind']?['direction']?['desc']?.toString() ??
-        '${_getWindDirText(windDirVal.round())}${windLevel}级';
+        '${_getWindDirText(windDirVal.round())}$windLevel级';
     final pressure = current['pressure']?['value']?.toString() ?? '--';
 
     List temperatures = forecastDaily['temperature']?['value'] ?? [];
@@ -444,7 +457,7 @@ class _SidebarRight extends StatelessWidget {
     }
 
     return Container(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.all(8 * scale),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -452,17 +465,17 @@ class _SidebarRight extends StatelessWidget {
             children: forecasts
                 .map(
                   (f) => Padding(
-                    padding: const EdgeInsets.only(bottom: 2),
+                    padding: EdgeInsets.only(bottom: 2 * scale),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         SizedBox(
-                          width: 32,
+                          width: 32 * scale,
                           child: Text(
                             f['day'],
-                            style: const TextStyle(
+                            style: TextStyle(
                               color: Colors.white,
-                              fontSize: 13,
+                              fontSize: 13 * scale,
                             ),
                           ),
                         ),
@@ -470,18 +483,18 @@ class _SidebarRight extends StatelessWidget {
                           child: Center(
                             child: Text(
                               f['weather'],
-                              style: const TextStyle(
+                              style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 13,
+                                fontSize: 13 * scale,
                               ),
                             ),
                           ),
                         ),
                         Text(
                           '${f['low']}° - ${f['high']}°',
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.grey,
-                            fontSize: 13,
+                            fontSize: 13 * scale,
                           ),
                         ),
                       ],
@@ -490,9 +503,9 @@ class _SidebarRight extends StatelessWidget {
                 )
                 .toList(),
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 4),
-            child: Divider(color: Colors.white),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 4 * scale),
+            child: const Divider(color: Colors.white),
           ),
           Expanded(
             child: GridView.count(
@@ -500,12 +513,12 @@ class _SidebarRight extends StatelessWidget {
               childAspectRatio: 1.2,
               physics: const NeverScrollableScrollPhysics(),
               children: [
-                _buildIndexItem('体感', '$feelsLike°C', true, true),
-                _buildIndexItem('湿度', '$humidity%', false, true),
-                _buildIndexItem('紫外线', uvIndex, true, true),
-                _buildIndexItem('风向', windDesc, false, true),
-                _buildIndexItem('气压', pressure, true, false),
-                _buildIndexItem('日落', sunset, false, false),
+                _buildIndexItem('体感', '$feelsLike°C', true, true, scale),
+                _buildIndexItem('湿度', '$humidity%', false, true, scale),
+                _buildIndexItem('紫外线', uvIndex, true, true, scale),
+                _buildIndexItem('风向', windDesc, false, true, scale),
+                _buildIndexItem('气压', pressure, true, false, scale),
+                _buildIndexItem('日落', sunset, false, false, scale),
               ],
             ),
           ),
@@ -514,7 +527,13 @@ class _SidebarRight extends StatelessWidget {
     );
   }
 
-  Widget _buildIndexItem(String label, String value, bool right, bool bottom) {
+  Widget _buildIndexItem(
+    String label,
+    String value,
+    bool right,
+    bool bottom,
+    double scale,
+  ) {
     return Container(
       decoration: BoxDecoration(
         border: Border(
@@ -526,18 +545,24 @@ class _SidebarRight extends StatelessWidget {
               : BorderSide.none,
         ),
       ),
-      padding: const EdgeInsets.symmetric(vertical: 2.0, horizontal: 4.0),
+      padding: EdgeInsets.symmetric(
+        vertical: 2.0 * scale,
+        horizontal: 4.0 * scale,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 11)),
-          const SizedBox(height: 1),
+          Text(
+            label,
+            style: TextStyle(color: Colors.grey, fontSize: 11 * scale),
+          ),
+          SizedBox(height: 1 * scale),
           Text(
             value,
-            style: const TextStyle(
+            style: TextStyle(
               color: Colors.white,
-              fontSize: 15,
+              fontSize: 15 * scale,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -547,7 +572,12 @@ class _SidebarRight extends StatelessWidget {
   }
 
   String _getWeatherDescription(String code) {
-    const Map<String, String> codes = {'0': '晴', '1': '多云', '2': '阴', '3': '阵雨'};
+    const Map<String, String> codes = {
+      '0': '晴',
+      '1': '多云',
+      '2': '阴',
+      '3': '阵雨',
+    };
     return codes[code] ?? '未知';
   }
 
@@ -558,7 +588,8 @@ class _SidebarRight extends StatelessWidget {
 }
 
 class _BottomCourseBar extends StatelessWidget {
-  const _BottomCourseBar();
+  final double scale;
+  const _BottomCourseBar({required this.scale});
 
   @override
   Widget build(BuildContext context) {
@@ -572,12 +603,12 @@ class _BottomCourseBar extends StatelessWidget {
     allCourses.addAll(listCourses);
 
     if (allCourses.isEmpty) {
-      return const Center(
+      return Center(
         child: Text(
           '暂无后续课程',
           style: TextStyle(
             color: Colors.white,
-            fontSize: 16,
+            fontSize: 16 * scale,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -590,7 +621,10 @@ class _BottomCourseBar extends StatelessWidget {
       ),
       child: Row(
         children: allCourses.take(5).map((c) {
-          bool isActive = topCourse != null && c.id == topCourse.id && svm.isCourseOngoing(c);
+          bool isActive =
+              topCourse != null &&
+              c.id == topCourse.id &&
+              svm.isCourseOngoing(c);
           bool isTomorrow = vm.isTomorrow(c, svm);
 
           return Expanded(
@@ -601,7 +635,10 @@ class _BottomCourseBar extends StatelessWidget {
                 ),
                 color: isActive ? Colors.grey[900] : Colors.black,
               ),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.symmetric(
+                horizontal: 16 * scale,
+                vertical: 8 * scale,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -611,9 +648,9 @@ class _BottomCourseBar extends StatelessWidget {
                       Expanded(
                         child: Text(
                           c.course,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: Colors.white,
-                            fontSize: 18,
+                            fontSize: 18 * scale,
                             fontWeight: FontWeight.bold,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -621,9 +658,9 @@ class _BottomCourseBar extends StatelessWidget {
                       ),
                       if (isTomorrow)
                         Container(
-                          margin: const EdgeInsets.only(left: 4),
-                          width: 6,
-                          height: 6,
+                          margin: EdgeInsets.only(left: 4 * scale),
+                          width: 6 * scale,
+                          height: 6 * scale,
                           decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
@@ -631,15 +668,15 @@ class _BottomCourseBar extends StatelessWidget {
                         ),
                     ],
                   ),
-                  const SizedBox(height: 4),
+                  SizedBox(height: 4 * scale),
                   Text(
                     '${c.startTime}-${c.endTime} | ${c.location}',
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                    style: TextStyle(color: Colors.grey, fontSize: 12 * scale),
                   ),
                   if (isActive) ...[
-                    const SizedBox(height: 6),
+                    SizedBox(height: 6 * scale),
                     Container(
-                      height: 6,
+                      height: 6 * scale,
                       width: double.infinity,
                       color: Colors.grey[800],
                       child: FractionallySizedBox(
