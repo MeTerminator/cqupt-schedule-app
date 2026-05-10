@@ -170,24 +170,22 @@ struct SharedDataProvider {
         guard let firstMonday = parseFirstMonday(from: response) else { return nil }
 
         let calendar = Calendar.current
-        let currentWeek = getWeek(for: date, firstMonday: firstMonday)
-        let currentDay = courseDay(from: date)
-        let isToday = course.week == currentWeek && course.day == currentDay
+        
+        // 计算课程那一天的日期：第一周周一 + (周次-1)*7 + (天数-1)
+        var dayComponents = DateComponents()
+        dayComponents.day = (course.week - 1) * 7 + (course.day - 1)
+        guard let courseDayDate = calendar.date(byAdding: dayComponents, to: firstMonday) else { return nil }
 
         let timeStr = isOngoing ? course.end_time : course.start_time
         let parts = timeStr.split(separator: ":")
         guard parts.count == 2, let h = Int(parts[0]), let m = Int(parts[1]) else { return nil }
 
-        var components = calendar.dateComponents([.year, .month, .day], from: date)
+        var components = calendar.dateComponents([.year, .month, .day], from: courseDayDate)
         components.hour = h
         components.minute = m
         components.second = 0
 
-        var targetDate = calendar.date(from: components)
-        if !isToday, let t = targetDate {
-            targetDate = calendar.date(byAdding: .day, value: 1, to: t)
-        }
-        return targetDate
+        return calendar.date(from: components)
     }
 
     // MARK: - 格式化

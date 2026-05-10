@@ -11,6 +11,7 @@ struct WatchCourseEntry: TimelineEntry {
     let progress: Double
     let todayCourseCount: Int
     let currentWeek: Int
+    let countdownTarget: Date?
 }
 
 // MARK: - Timeline Provider
@@ -24,7 +25,8 @@ struct WatchCourseProvider: TimelineProvider {
             isOngoing: false,
             progress: 0,
             todayCourseCount: 0,
-            currentWeek: 0
+            currentWeek: 0,
+            countdownTarget: nil
         )
     }
 
@@ -88,7 +90,8 @@ struct WatchCourseProvider: TimelineProvider {
             return WatchCourseEntry(
                 date: date, topCourse: nil, nextCourse: nil,
                 isOngoing: false, progress: 0,
-                todayCourseCount: 0, currentWeek: 0
+                todayCourseCount: 0, currentWeek: 0,
+                countdownTarget: nil
             )
         }
 
@@ -126,7 +129,8 @@ struct WatchCourseProvider: TimelineProvider {
             isOngoing: isOngoing,
             progress: progress,
             todayCourseCount: todayCount,
-            currentWeek: currentWeek
+            currentWeek: currentWeek,
+            countdownTarget: top.flatMap { SharedDataProvider.countdownTarget(for: $0, isOngoing: isOngoing, at: date, response: schedule) }
         )
     }
 

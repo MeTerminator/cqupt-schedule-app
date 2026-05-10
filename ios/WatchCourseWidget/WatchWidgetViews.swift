@@ -10,7 +10,7 @@ struct WatchRectangularView: View {
         if let course = entry.topCourse {
             VStack(alignment: .leading, spacing: 2) {
                 // 第一行：倒计时
-                if let targetDate = entry.isOngoing ? course.endDate(on: entry.date) : course.startDate(on: entry.date) {
+                if let targetDate = entry.countdownTarget {
                     HStack(spacing: 4) {
                         Text(entry.isOngoing ? "离下课" : "离上课")
                             .font(.footnote)
