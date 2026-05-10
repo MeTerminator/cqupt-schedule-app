@@ -222,8 +222,33 @@ class _SidebarLeft extends StatelessWidget {
     if (data['aqi']?['primary'] != null && data['aqi']?['primary'] != '') {
       tags.add('首要:${data['aqi']?['primary']}');
     }
-    if (minutelyDesc.contains('雨')) tags.add('有雨');
-    if (minutelyDesc.contains('雪')) tags.add('有雪');
+
+    // Rain and snow tags logic: Check current weather code and minutely precipitation status
+    final currentCode = current['weather']?.toString() ?? '0';
+    final intCode = int.tryParse(currentCode) ?? -1;
+    bool isRainingNow = false;
+    bool isSnowingNow = false;
+    if (intCode != -1) {
+      // Xiaomi/Meteo weather codes: 3-12, 19, 21-25 are rain related; 13-17, 26-28 are snow; 6 is sleet.
+      isRainingNow =
+          (intCode >= 3 && intCode <= 12) ||
+          intCode == 19 ||
+          (intCode >= 21 && intCode <= 25) ||
+          intCode == 6;
+      isSnowingNow =
+          (intCode >= 13 && intCode <= 17) ||
+          (intCode >= 26 && intCode <= 28) ||
+          intCode == 6;
+    }
+
+    final isPrecipShow = data['minutely']?['precipitation']?['isShow'] == true;
+    if (isRainingNow || (isPrecipShow && minutelyDesc.contains('雨'))) {
+      tags.add('有雨');
+    }
+    if (isSnowingNow || (isPrecipShow && minutelyDesc.contains('雪'))) {
+      tags.add('有雪');
+    }
+
     final alerts = data['alerts'] as List? ?? [];
     for (var alert in alerts) {
       if (alert['type'] != null) tags.add(alert['type'].toString());
