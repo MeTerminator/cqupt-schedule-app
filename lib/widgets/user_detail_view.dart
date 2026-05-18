@@ -239,12 +239,12 @@ class _UserDetailViewViewState extends State<UserDetailView> {
   }
 
   void _showCalendarSyncSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => CalendarExportView(viewModel: widget.viewModel),
-    );
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => CalendarExportView(viewModel: widget.viewModel),
+      ),
+    ).then((_) => setState(() {}));
   }
 
   Widget _buildSection(
@@ -291,28 +291,11 @@ class _UserDetailViewViewState extends State<UserDetailView> {
   }
 
   Widget _buildSyncCalendarRow(BuildContext context) {
-    return InkWell(
+    return ListTile(
+      leading: const Icon(Icons.calendar_month),
+      title: const Text('导出到系统日历'),
+      trailing: const Icon(Icons.chevron_right),
       onTap: () => _showCalendarSyncSheet(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.calendar_month,
-              size: 20,
-              color: Colors.blueAccent,
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text(
-                '导出到系统日历',
-                style: TextStyle(fontWeight: FontWeight.w500),
-              ),
-            ),
-            Icon(Icons.chevron_right, size: 20, color: Colors.grey[400]),
-          ],
-        ),
-      ),
     );
   }
 
