@@ -7,6 +7,7 @@ import '../views/theme_settings_view.dart';
 import '../views/desktop_widget_view.dart';
 import '../views/desk_dock_widget_view.dart';
 import '../views/hidden_courses_management_view.dart';
+import '../views/alarm_settings_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -182,6 +183,26 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       // 4. 系统同步
                       _buildSection(context, '系统同步', [
                         _buildSyncCalendarRow(context),
+                      ]),
+                      const SizedBox(height: 16),
+
+                      // 闹钟管理
+                      _buildSection(context, '闹钟管理', [
+                        ListTile(
+                          leading: const Icon(Icons.alarm),
+                          title: const Text('闹钟管理'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AlarmSettingsView(
+                                  viewModel: widget.viewModel,
+                                ),
+                              ),
+                            ).then((_) => setState(() {}));
+                          },
+                        ),
                       ]),
                       const SizedBox(height: 24),
 

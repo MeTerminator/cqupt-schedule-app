@@ -36,6 +36,8 @@
 	<string>我们需要访问您的日历，以便将课程表同步到系统日历中。</string>
 	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
 	<string>我们需要写入权限，以便将课程表添加到您的日历。</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>我们需要使用闹钟权限来为您提供课程提前提醒服务。</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

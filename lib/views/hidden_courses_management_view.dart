@@ -29,6 +29,15 @@ class _HiddenCoursesManagementViewState extends State<HiddenCoursesManagementVie
         elevation: 0,
         backgroundColor: Colors.transparent,
         systemOverlayStyle: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+        actions: rules.isEmpty
+            ? null
+            : [
+                IconButton(
+                  icon: const Icon(Icons.delete_sweep, color: Colors.redAccent),
+                  tooltip: '全部恢复显示',
+                  onPressed: () => _confirmClearAll(context),
+                ),
+              ],
       ),
       body: rules.isEmpty ? _buildEmptyState(context) : _buildRulesList(context, rules),
     );
@@ -230,5 +239,31 @@ class _HiddenCoursesManagementViewState extends State<HiddenCoursesManagementVie
       default:
         return '隐藏单节：${rule.displayText.substring(rule.displayText.indexOf('(') + 1, rule.displayText.length - 1)}';
     }
+  }
+
+  Future<void> _confirmClearAll(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('全部恢复显示'),
+        content: const Text('确定要将所有已隐藏的课程恢复显示吗？'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('取消'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              await widget.viewModel.clearAllHiddenRules();
+              widget.viewModel.triggerToast('已恢复所有隐藏的课程');
+              setState(() {});
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blueAccent),
+            child: const Text('确定恢复', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
   }
 }

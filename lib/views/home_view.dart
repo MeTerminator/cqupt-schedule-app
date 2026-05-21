@@ -6,82 +6,56 @@ import '../widgets/header_view.dart';
 import '../widgets/schedule_grid.dart';
 import '../widgets/course_detail_view.dart';
 import '../widgets/user_detail_view.dart';
-import '../widgets/toast_view.dart';
 import 'login_view.dart';
 
 class HomeView extends StatefulWidget {
   final ScheduleViewModel viewModel;
+  final VoidCallback? onLogout;
 
-  const HomeView({super.key, required this.viewModel});
+  const HomeView({super.key, required this.viewModel, this.onLogout});
 
   @override
   State<HomeView> createState() => _HomeViewState();
 }
 
 class _HomeViewState extends State<HomeView> {
-  CourseInstance? _selectedCourse;
-
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider.value(
       value: widget.viewModel,
       child: Consumer<ScheduleViewModel>(
         builder: (context, viewModel, child) {
-          return Stack(
-            children: [
-              Scaffold(
-                body: Column(
-                  children: [
-                    HeaderView(
-                      viewModel: viewModel,
-                      onUserTap: () {
-                        _showUserSheet(context, viewModel);
-                      },
-                    ),
-                    Expanded(
-                      child: PageView.builder(
-                        itemCount: 21,
-                        controller: PageController(
-                          initialPage: viewModel.selectedWeek,
-                        ),
-                        onPageChanged: (index) {
-                          viewModel.selectedWeek = index;
-                          viewModel.notifyListeners();
-                        },
-                        itemBuilder: (context, index) {
-                          return ScheduleGrid(
-                            viewModel: viewModel,
-                            weekToShow: index,
-                            onCourseTap: (course) {
-                              setState(() {
-                                _selectedCourse = course;
-                              });
-                              _showCourseDetail(context, course, viewModel);
-                            },
-                          );
-                        },
-                      ),
-                    ),
-                  ],
+          return Scaffold(
+            body: Column(
+              children: [
+                HeaderView(
+                  viewModel: viewModel,
+                  onUserTap: () {
+                    _showUserSheet(context, viewModel);
+                  },
                 ),
-              ),
-              if (viewModel.showToast)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: AnimatedSlide(
-                    offset: viewModel.showToast
-                        ? Offset.zero
-                        : const Offset(0, -1),
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeOut,
-                    child: Center(
-                      child: ToastView(message: viewModel.toastMessage),
+                Expanded(
+                  child: PageView.builder(
+                    itemCount: 21,
+                    controller: PageController(
+                      initialPage: viewModel.selectedWeek,
                     ),
+                    onPageChanged: (index) {
+                      viewModel.updateSelectedWeek(index);
+                    },
+                    itemBuilder: (context, index) {
+                      return ScheduleGrid(
+                        viewModel: viewModel,
+                        weekToShow: index,
+                        onCourseTap: (course) {
+                          _showCourseDetail(context, course, viewModel);
+                        },
+                      );
+                    },
                   ),
                 ),
-            ],
+              ],
+            ),
           );
         },
       ),
@@ -110,9 +84,11 @@ class _HomeViewState extends State<HomeView> {
       builder: (context) => UserDetailView(
         viewModel: viewModel,
         onLogout: () {
-          viewModel.currentId = '';
-          viewModel.scheduleData = null;
-          viewModel.notifyListeners();
+          viewModel.performLogout();
+          if (widget.onLogout != null) {
+            widget.onLogout!();
+          }
+          Navigator.pop(context);
         },
       ),
     );
@@ -139,7 +115,7 @@ class _MainAppState extends State<MainApp> {
   }
 
   Future<void> _loadSavedId() async {
-    final prefs = await _viewModel.loadCustomCourses();
+    await _viewModel.loadCustomCourses();
     final savedId = await _getSavedId();
     setState(() {
       _savedId = savedId;
@@ -202,7 +178,10 @@ class _MainAppState extends State<MainApp> {
         ),
         themeMode: ThemeMode.system,
         home: _isLoggedIn
-            ? HomeView(viewModel: _viewModel)
+            ? HomeView(
+                viewModel: _viewModel,
+                onLogout: _handleLogout,
+              )
             : LoginView(onLogin: _handleLogin),
       ),
     );

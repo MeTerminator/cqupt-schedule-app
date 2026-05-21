@@ -134,6 +134,33 @@ class _MyAppState extends State<MyApp> {
         home: _isLoggedIn
             ? MainHomeView(viewModel: _viewModel, onLogout: _handleLogout)
             : LoginView(onLogin: _handleLogin),
+        builder: (context, child) {
+          return Consumer<ScheduleViewModel>(
+            builder: (context, viewModel, _) {
+              return Stack(
+                children: [
+                  if (child != null) child,
+                  IgnorePointer(
+                    ignoring: true,
+                    child: AnimatedOpacity(
+                      opacity: viewModel.showToast ? 1.0 : 0.0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      child: AnimatedSlide(
+                        offset: viewModel.showToast
+                            ? Offset.zero
+                            : const Offset(0, -1),
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeOut,
+                        child: ToastView(message: viewModel.toastMessage),
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          );
+        },
       ),
     );
   }
@@ -255,61 +282,40 @@ class _MainHomeViewState extends State<MainHomeView> {
           builder: (context, snapshot) {
             final decoration = snapshot.data;
 
-            return Stack(
-              children: [
-                Scaffold(
-                  // 如果有背景图片，设置背景为透明以显示 Container 里的图片
-                  backgroundColor: decoration != null
-                      ? Colors.transparent
-                      : null,
-                  body: Container(
-                    decoration: decoration,
-                    child: Column(
-                      children: [
-                        HeaderView(
-                          viewModel: viewModel,
-                          onUserTap: () => _showUserSheet(context),
-                        ),
-                        Expanded(
-                          child: PageView.builder(
-                            controller: _pageController,
-                            itemCount: 21,
-                            onPageChanged: (index) {
-                              viewModel.selectedWeek = index;
-                              viewModel.notifyListeners();
-                            },
-                            itemBuilder: (context, index) {
-                              return ScheduleGrid(
-                                viewModel: viewModel,
-                                weekToShow: index,
-                                onCourseTap: (course) =>
-                                    _showCourseDetail(context, course),
-                              );
-                            },
-                          ),
-                        ),
-                      ],
+            return Scaffold(
+              // 如果有背景图片，设置背景为透明以显示 Container 里的图片
+              backgroundColor: decoration != null
+                  ? Colors.transparent
+                  : null,
+              body: Container(
+                decoration: decoration,
+                child: Column(
+                  children: [
+                    HeaderView(
+                      viewModel: viewModel,
+                      onUserTap: () => _showUserSheet(context),
                     ),
-                  ),
-                ),
-                // 3. Toast 提示层
-                if (viewModel.showToast)
-                  Positioned(
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    child: AnimatedSlide(
-                      offset: viewModel.showToast
-                          ? Offset.zero
-                          : const Offset(0, -1),
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeOut,
-                      child: Center(
-                        child: ToastView(message: viewModel.toastMessage),
+                    Expanded(
+                      child: PageView.builder(
+                        controller: _pageController,
+                        itemCount: 21,
+                        onPageChanged: (index) {
+                          viewModel.selectedWeek = index;
+                          viewModel.notifyListeners();
+                        },
+                        itemBuilder: (context, index) {
+                          return ScheduleGrid(
+                            viewModel: viewModel,
+                            weekToShow: index,
+                            onCourseTap: (course) =>
+                                _showCourseDetail(context, course),
+                          );
+                        },
                       ),
                     ),
-                  ),
-              ],
+                  ],
+                ),
+              ),
             );
           },
         );

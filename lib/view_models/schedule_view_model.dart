@@ -28,6 +28,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
   DateTime? firstMondayDate;
   Timer? _refreshTimer;
+  Timer? _toastTimer;
 
   // 标志位：是否需要动画跳转到指定周
   bool shouldAnimateToWeek = false;
@@ -426,6 +427,18 @@ class ScheduleViewModel extends ChangeNotifier {
     }
   }
 
+  void updateSelectedWeek(int week, {bool animate = false}) {
+    selectedWeek = week.clamp(0, 20);
+    shouldAnimateToWeek = animate;
+    notifyListeners();
+  }
+
+  void performLogout() {
+    currentId = '';
+    scheduleData = null;
+    notifyListeners();
+  }
+
   int calculateCurrentRealWeek() {
     if (firstMondayDate == null) return 1;
 
@@ -441,11 +454,12 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   void triggerToast(String msg) {
+    _toastTimer?.cancel();
     toastMessage = msg;
     showToast = true;
     notifyListeners();
 
-    Future.delayed(const Duration(seconds: 2), () {
+    _toastTimer = Timer(const Duration(seconds: 2), () {
       showToast = false;
       notifyListeners();
     });
@@ -569,6 +583,15 @@ class ScheduleViewModel extends ChangeNotifier {
 
   Future<void> removeHiddenRuleById(String ruleId) async {
     hiddenRules.removeWhere((e) => e.id == ruleId);
+    await saveHiddenRules();
+    notifyListeners();
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
+  }
+
+  Future<void> clearAllHiddenRules() async {
+    hiddenRules.clear();
     await saveHiddenRules();
     notifyListeners();
     if (!kIsWeb) {

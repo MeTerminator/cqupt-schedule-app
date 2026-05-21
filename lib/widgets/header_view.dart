@@ -114,9 +114,7 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
             },
             onChangeEnd: (value) {
               final target = value.round();
-              widget.viewModel.shouldAnimateToWeek = true;
-              widget.viewModel.selectedWeek = target;
-              widget.viewModel.notifyListeners();
+              widget.viewModel.updateSelectedWeek(target, animate: true);
               Navigator.pop(context);
             },
           ),
@@ -259,10 +257,7 @@ class HeaderView extends StatelessWidget {
                     HapticFeedback.mediumImpact();
                     final realWeek = viewModel.calculateCurrentRealWeek();
                     final target = realWeek.clamp(0, 20);
-                    // 设置标志位，表示需要使用动画
-                    viewModel.shouldAnimateToWeek = true;
-                    viewModel.selectedWeek = target;
-                    viewModel.notifyListeners();
+                    viewModel.updateSelectedWeek(target, animate: true);
                   },
                   child: Container(
                     padding: const EdgeInsets.all(8),

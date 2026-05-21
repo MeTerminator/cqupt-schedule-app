@@ -3,6 +3,8 @@ import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
 import '../models/hidden_rule_model.dart';
 
+import '../services/alarm_service.dart';
+
 class CourseDetailView extends StatelessWidget {
   final CourseInstance course;
   final ScheduleViewModel viewModel;
@@ -15,6 +17,26 @@ class CourseDetailView extends StatelessWidget {
 
   String get courseDate => viewModel.calculateDate(course.week, course.day);
   String get durationWeeks => viewModel.durationWeeks(course);
+
+  DateTime? get courseDateTime {
+    if (viewModel.scheduleData == null) return null;
+    final startStr = viewModel.scheduleData!.week1Monday.substring(0, 10);
+    try {
+      final firstMonday = DateTime.parse(startStr);
+      final offset = (course.week - 1) * 7 + (course.day - 1);
+      final dateOfDay = firstMonday.add(Duration(days: offset));
+      
+      final timeParts = course.startTime.split(':');
+      if (timeParts.length == 2) {
+        final hour = int.parse(timeParts[0]);
+        final minute = int.parse(timeParts[1]);
+        return DateTime(dateOfDay.year, dateOfDay.month, dateOfDay.day, hour, minute);
+      }
+    } catch (e) {
+      return null;
+    }
+    return null;
+  }
 
   String getChineseDay(int day) {
     const days = ['一', '二', '三', '四', '五', '六', '日'];
@@ -263,6 +285,20 @@ class CourseDetailView extends StatelessWidget {
           child: Column(
             children: [
               ListTile(
+                leading: const Icon(Icons.alarm, color: Colors.blue),
+                title: const Text('设置此节闹钟', style: TextStyle(fontWeight: FontWeight.w500)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showAlarmSettings(context),
+              ),
+              Divider(
+                height: 1,
+                indent: 16,
+                endIndent: 16,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? Colors.white10
+                    : Colors.black12,
+              ),
+              ListTile(
                 leading: const Icon(Icons.visibility_off, color: Colors.orange),
                 title: const Text('隐藏此课程', style: TextStyle(fontWeight: FontWeight.w500)),
                 trailing: const Icon(Icons.chevron_right),
@@ -439,5 +475,126 @@ class CourseDetailView extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _showAlarmSettings(BuildContext context) {
+    final DateTime? cDateTime = courseDateTime;
+    if (cDateTime == null) {
+      viewModel.triggerToast("无法获取课程时间信息");
+      return;
+    }
+    if (cDateTime.isBefore(DateTime.now())) {
+      viewModel.triggerToast("该课程时间已过，无法设置闹钟");
+      return;
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+        final dividerColor = isDark ? Colors.white10 : Colors.black12;
+
+        final presets = [5, 10, 15, 30, 45, 60];
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+              Text(
+                '设置课程闹钟',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '设置提前 N 分钟的原生闹钟提醒',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 20),
+              Flexible(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: presets.length,
+                  separatorBuilder: (context, index) => Container(height: 1, color: dividerColor),
+                  itemBuilder: (context, index) {
+                    final mins = presets[index];
+                    return ListTile(
+                      leading: const Icon(Icons.alarm, color: Colors.blue),
+                      title: Text('提前 $mins 分钟'),
+                      subtitle: Text('将于 ${viewModel.calculateDate(course.week, course.day)} ${_formatTime(cDateTime.subtract(Duration(minutes: mins)))} 响铃'),
+                      trailing: const Icon(Icons.chevron_right, size: 20),
+                      onTap: () async {
+                        final result = await AlarmService.scheduleSingleCourseAlarm(
+                          course: course,
+                          courseDateTime: cDateTime,
+                          leadMinutes: mins,
+                        );
+                        if (result == 'success') {
+                          viewModel.triggerToast('闹钟设置成功');
+                        } else if (result == 'duplicate') {
+                          viewModel.triggerToast('该时间已设置过闹钟，请勿重复设置');
+                        } else if (result == 'past') {
+                          viewModel.triggerToast('设置的时间已过期，请重新选择');
+                        } else if (result == 'no_permission') {
+                          viewModel.triggerToast('闹钟设置失败，请授予闹钟与通知权限');
+                        } else {
+                          viewModel.triggerToast('闹钟设置失败，请检查权限');
+                        }
+                        if (ctx.mounted) {
+                          Navigator.pop(ctx);
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+              Container(height: 1, color: dividerColor),
+              ListTile(
+                leading: const Icon(Icons.alarm_off, color: Colors.red),
+                title: const Text('取消闹钟', style: TextStyle(color: Colors.red)),
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: () async {
+                  await AlarmService.cancelAlarm(course.id);
+                  viewModel.triggerToast('已取消该课程闹钟');
+                  if (ctx.mounted) {
+                    Navigator.pop(ctx);
+                  }
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  String _formatTime(DateTime dt) {
+    final hour = dt.hour.toString().padLeft(2, '0');
+    final minute = dt.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
   }
 }
