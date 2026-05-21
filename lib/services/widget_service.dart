@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'alarm_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:home_widget/home_widget.dart';
@@ -28,6 +29,10 @@ class WidgetService {
 
   static Future<void> syncToWidget(ScheduleViewModel vm) async {
     if (vm.scheduleData == null) return;
+
+    if (Platform.isIOS) {
+      await AlarmService.syncCourseLiveActivity(vm);
+    }
 
     try {
       // iOS 必须设置 AppGroupId

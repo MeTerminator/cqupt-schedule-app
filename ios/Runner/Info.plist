@@ -38,7 +38,10 @@
 	<string>我们需要写入权限，以便将课程表添加到您的日历。</string>
 	<key>NSAlarmKitUsageDescription</key>
 	<string>我们需要使用闹钟权限来为您提供课程提前提醒服务。</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
+
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
 		<false/>

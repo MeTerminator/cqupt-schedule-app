@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/alarm_service.dart';
 import '../view_models/schedule_view_model.dart';
+import 'live_activity_settings_view.dart';
 
 class AlarmSettingsView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -17,6 +18,10 @@ class AlarmSettingsView extends StatefulWidget {
 class _AlarmSettingsViewState extends State<AlarmSettingsView> {
   int _leadMinutes8 = 30;
   int _leadMinutes10 = 30;
+  int _snoozeMinutes = 9;
+  bool _courseLiveActivityEnabled = true;
+  int _courseLiveActivityLeadMinutes = 15;
+  bool _isSupported = true;
   bool _isLoading = true;
   List<Map<String, dynamic>> _scheduledAlarms = [];
 
@@ -29,15 +34,32 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
   Future<void> _loadSettingsAndAlarms() async {
     final lead8 = await AlarmService.getLeadMinutes8();
     final lead10 = await AlarmService.getLeadMinutes10();
+    final snooze = await AlarmService.getSnoozeMinutes();
+    final liveEnabled = await AlarmService.getCourseLiveActivityEnabled();
+    final liveLead = await AlarmService.getCourseLiveActivityLeadMinutes();
     final alarms = await AlarmService.getScheduledAlarms();
+    final isSupported = await AlarmService.checkOSVersionSupport();
     if (mounted) {
       setState(() {
         _leadMinutes8 = lead8;
         _leadMinutes10 = lead10;
+        _snoozeMinutes = snooze;
+        _courseLiveActivityEnabled = liveEnabled;
+        _courseLiveActivityLeadMinutes = liveLead;
         _scheduledAlarms = alarms;
+        _isSupported = isSupported;
         _isLoading = false;
       });
     }
+  }
+
+
+
+  Future<void> _saveSnoozeMinutes(int value) async {
+    setState(() {
+      _snoozeMinutes = value;
+    });
+    await AlarmService.setSnoozeMinutes(value);
   }
 
   Future<void> _loadScheduledAlarms() async {
@@ -115,6 +137,47 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (!_isSupported) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: Colors.redAccent, size: 24),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Text(
+                                  '系统版本不支持',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.redAccent,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'iOS版本低于26，需要iOS26才能启用此功能。',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: isDark ? Colors.grey[300] : Colors.grey[700],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   // 1. 规则说明卡片 (Info Card)
                   Container(
                     width: double.infinity,
@@ -246,6 +309,62 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                   ),
                   const SizedBox(height: 24),
 
+                  // 稍后提醒设置 (Snooze Settings)
+                  Text(
+                    'AlarmKit 稍后提醒设置',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: cardBgColor,
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Column(
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Row(
+                              children: [
+                                Icon(Icons.snooze_rounded, color: Colors.purple, size: 22),
+                                SizedBox(width: 12),
+                                Text(
+                                  '稍后提醒时间',
+                                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              '$_snoozeMinutes 分钟',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.purple,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Slider(
+                          value: _snoozeMinutes.toDouble(),
+                          min: 1,
+                          max: 30,
+                          divisions: 29,
+                          label: '$_snoozeMinutes 分钟',
+                          onChanged: (val) => _saveSnoozeMinutes(val.toInt()),
+                          activeColor: Colors.purple,
+                          inactiveColor: Colors.purple.withOpacity(0.2),
+                        ),
+                      ],
+                    ),
+                  ),
+
+
                   // 3. 已设置的闹钟列表 (Scheduled Alarms List)
                   Text(
                     '已登记的闹钟列表 (${_scheduledAlarms.length})',
@@ -316,8 +435,13 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                               final leadMinutes = alarm['leadMinutes'] as int?;
 
                               final isMorningAlarm = id.startsWith('morning_alarm');
-                              final icon = isMorningAlarm ? Icons.wb_sunny : Icons.school;
-                              final iconColor = isMorningAlarm ? Colors.orange : Colors.blue;
+                              final isTestAlarm = id.startsWith('test_alarm');
+                              final icon = isTestAlarm
+                                  ? Icons.alarm_on_rounded
+                                  : (isMorningAlarm ? Icons.wb_sunny : Icons.school);
+                              final iconColor = isTestAlarm
+                                  ? Colors.purple
+                                  : (isMorningAlarm ? Colors.orange : Colors.blue);
 
                               return ListTile(
                                 dense: true,
@@ -390,6 +514,15 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                     color: Colors.red,
                     onTap: _clearAllAlarms,
                   ),
+                  const SizedBox(height: 12),
+                  _buildActionButton(
+                    context,
+                    title: '添加测试闹钟 (3秒后)',
+                    subtitle: '用于快速测试系统原生闹钟与强提醒通知的触发情况',
+                    icon: Icons.alarm_add_rounded,
+                    color: Colors.orange,
+                    onTap: _setupTestAlarm,
+                  ),
                   const SizedBox(height: 40),
                 ],
               ),
@@ -398,6 +531,12 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
   }
 
   Future<void> _setupAlarmsForWeek(int week, String label) async {
+    final isSupported = await AlarmService.checkOSVersionSupport();
+    if (!isSupported) {
+      widget.viewModel.triggerToast('iOS版本低于26，需要iOS26才能启用此功能');
+      return;
+    }
+
     if (week <= 0 || week > 20) {
       widget.viewModel.triggerToast('学期周次无效 ($week)，无法设置');
       return;
@@ -442,6 +581,20 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
         ],
       ),
     );
+  }
+
+  Future<void> _setupTestAlarm() async {
+    final result = await AlarmService.scheduleTestAlarm();
+    if (result == 'success') {
+      widget.viewModel.triggerToast('测试闹钟已添加，3秒后触发响铃');
+      await _loadScheduledAlarms();
+    } else if (result == 'low_os_version') {
+      widget.viewModel.triggerToast('iOS版本低于26，需要iOS26才能启用此功能');
+    } else if (result == 'no_permission') {
+      widget.viewModel.triggerToast('添加失败，请授予闹钟与通知权限');
+    } else {
+      widget.viewModel.triggerToast('添加测试闹钟失败，请重试');
+    }
   }
 
   Widget _buildActionButton(

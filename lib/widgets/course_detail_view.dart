@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
@@ -284,20 +285,22 @@ class CourseDetailView extends StatelessWidget {
           ),
           child: Column(
             children: [
-              ListTile(
-                leading: const Icon(Icons.alarm, color: Colors.blue),
-                title: const Text('设置此节闹钟', style: TextStyle(fontWeight: FontWeight.w500)),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => _showAlarmSettings(context),
-              ),
-              Divider(
-                height: 1,
-                indent: 16,
-                endIndent: 16,
-                color: Theme.of(context).brightness == Brightness.dark
-                    ? Colors.white10
-                    : Colors.black12,
-              ),
+              if (Platform.isIOS) ...[
+                ListTile(
+                  leading: const Icon(Icons.alarm, color: Colors.blue),
+                  title: const Text('设置此节闹钟', style: TextStyle(fontWeight: FontWeight.w500)),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showAlarmSettings(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white10
+                      : Colors.black12,
+                ),
+              ],
               ListTile(
                 leading: const Icon(Icons.visibility_off, color: Colors.orange),
                 title: const Text('隐藏此课程', style: TextStyle(fontWeight: FontWeight.w500)),
@@ -555,6 +558,8 @@ class CourseDetailView extends StatelessWidget {
                         );
                         if (result == 'success') {
                           viewModel.triggerToast('闹钟设置成功');
+                        } else if (result == 'low_os_version') {
+                          viewModel.triggerToast('iOS版本低于26，需要iOS26才能启用此功能');
                         } else if (result == 'duplicate') {
                           viewModel.triggerToast('该时间已设置过闹钟，请勿重复设置');
                         } else if (result == 'past') {

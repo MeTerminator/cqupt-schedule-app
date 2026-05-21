@@ -10,6 +10,9 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
     private let appGroupId = "group.top.met6.cquptscheduleios"
     private let dataKey = "full_schedule_json"
     private var lastSyncedHash: Int = 0
+    
+    // 实例化一次，避免在高频/监听事件中重复创建，防止内存和文件句柄争抢导致崩溃
+    private lazy var prefs = UserDefaults(suiteName: appGroupId)
 
     private override init() {
         super.init()
@@ -27,8 +30,19 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
         session.activate()
         print("[WatchSync] WCSession activating...")
 
-        // 每 3 秒检查 UserDefaults 是否有变化
-        Timer.scheduledTimer(withTimeInterval: 3.0, repeats: true) { [weak self] _ in
+        // 使用系统级通知监听代替 polling 定时器，并仅监听特定的 App Group UserDefaults 实例
+        // 这样可以彻底避免系统级/其他插件的高频 UserDefaults 写入频繁触发通知，降低主线程调度与线程争抢开销
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(userDefaultsDidChange),
+            name: UserDefaults.didChangeNotification,
+            object: prefs
+        )
+    }
+
+    @objc private func userDefaultsDidChange(_ notification: Notification) {
+        // 由于通知可能产生在后台（如 Dart 线程中写入时），我们必须 dispatch 到主线程以确保操作线程安全与同步顺序
+        DispatchQueue.main.async { [weak self] in
             self?.checkAndSync()
         }
     }
@@ -36,7 +50,6 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
     // MARK: - 检查并同步
 
     private func checkAndSync() {
-        let prefs = UserDefaults(suiteName: appGroupId)
         let currentData = prefs?.string(forKey: dataKey) ?? ""
 
         // 即使数据为空也检查 Hash，这样退出登录清空数据时也能同步到 Watch
@@ -66,7 +79,6 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
             return
         }
 
-        let prefs = UserDefaults(suiteName: appGroupId)
         // 如果没有数据，发送空字符串以触发 Watch 端清空
         let jsonString = prefs?.string(forKey: dataKey) ?? ""
 
@@ -96,6 +108,10 @@ class WatchSessionManager: NSObject, WCSessionDelegate {
             WCSession.default.transferUserInfo(payload)
             print("[WatchSync] Watch not reachable, sent via applicationContext + transferUserInfo")
         }
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self)
     }
 
     // MARK: - WCSessionDelegate

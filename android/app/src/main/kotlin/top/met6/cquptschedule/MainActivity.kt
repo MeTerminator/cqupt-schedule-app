@@ -143,6 +143,9 @@ class MainActivity : FlutterActivity() {
                     clearScheduledIds()
                     result.success(true)
                 }
+                "checkOSVersionSupport" -> {
+                    result.success(true)
+                }
                 else -> result.notImplemented()
             }
         }

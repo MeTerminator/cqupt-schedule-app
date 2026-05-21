@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import '../view_models/schedule_view_model.dart';
 import 'calendar_export_view.dart';
@@ -8,6 +9,7 @@ import '../views/desktop_widget_view.dart';
 import '../views/desk_dock_widget_view.dart';
 import '../views/hidden_courses_management_view.dart';
 import '../views/alarm_settings_view.dart';
+import '../views/live_activity_settings_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -186,25 +188,42 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       ]),
                       const SizedBox(height: 16),
 
-                      // 闹钟管理
-                      _buildSection(context, '闹钟管理', [
-                        ListTile(
-                          leading: const Icon(Icons.alarm),
-                          title: const Text('闹钟管理'),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => AlarmSettingsView(
-                                  viewModel: widget.viewModel,
+                      // 闹钟与实时活动
+                      if (Platform.isIOS) ...[
+                        _buildSection(context, '闹钟与实时活动', [
+                          ListTile(
+                            leading: const Icon(Icons.alarm),
+                            title: const Text('闹钟管理'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => AlarmSettingsView(
+                                    viewModel: widget.viewModel,
+                                  ),
                                 ),
-                              ),
-                            ).then((_) => setState(() {}));
-                          },
-                        ),
-                      ]),
-                      const SizedBox(height: 24),
+                              ).then((_) => setState(() {}));
+                            },
+                          ),
+                          ListTile(
+                            leading: const Icon(Icons.layers_rounded),
+                            title: const Text('实时活动设置'),
+                            trailing: const Icon(Icons.chevron_right),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => LiveActivitySettingsView(
+                                    viewModel: widget.viewModel,
+                                  ),
+                                ),
+                              ).then((_) => setState(() {}));
+                            },
+                          ),
+                        ]),
+                        const SizedBox(height: 16),
+                      ],
 
                       // 5. 更多功能
                       _buildSection(context, '更多功能', [

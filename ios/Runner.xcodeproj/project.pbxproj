@@ -22,6 +22,7 @@
 		7328EE522F87381800B2417A /* SharedDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7328EE4C2F87381800B2417A /* SharedDataProvider.swift */; };
 		7328EEAB2F87427000B2417A /* WatchSessionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7328EEAA2F87427000B2417A /* WatchSessionManager.swift */; };
 		7328F0B52F87678800B2417A /* WatchCourseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7328EE252F87376E00B2417A /* WatchCourseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		735A9DB32FBF42CA0059A53F /* AlarmMetadataKit in Frameworks */ = {isa = PBXBuildFile; productRef = 735A9DB22FBF42CA0059A53F /* AlarmMetadataKit */; };
 		74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74858FAE1ED2DC5600515810 /* AppDelegate.swift */; };
 		7766E5BA0DB11D89920B3B05 /* Pods_RunnerTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 68C27261D061F19BE062F1BD /* Pods_RunnerTests.framework */; };
 		7884E8682EC3CC0700C636F2 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */; };
@@ -225,6 +226,7 @@
 			files = (
 				730A63342F59EF2F008F34D5 /* SwiftUI.framework in Frameworks */,
 				730A63322F59EF2F008F34D5 /* WidgetKit.framework in Frameworks */,
+				735A9DB32FBF42CA0059A53F /* AlarmMetadataKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -514,6 +516,9 @@
 				"zh-Hans",
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
+			packageReferences = (
+				735A9DB12FBF42970059A53F /* XCLocalSwiftPackageReference "AlarmMetadataKit" */,
+			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
@@ -1548,6 +1553,21 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		735A9DB12FBF42970059A53F /* XCLocalSwiftPackageReference "AlarmMetadataKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = AlarmMetadataKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		735A9DB22FBF42CA0059A53F /* AlarmMetadataKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 735A9DB12FBF42970059A53F /* XCLocalSwiftPackageReference "AlarmMetadataKit" */;
+			productName = AlarmMetadataKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 97C146E61CF9000F007C117D /* Project object */;
 }
