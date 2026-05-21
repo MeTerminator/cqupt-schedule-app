@@ -6,6 +6,7 @@ import '../views/custom_courses_view.dart';
 import '../views/theme_settings_view.dart';
 import '../views/desktop_widget_view.dart';
 import '../views/desk_dock_widget_view.dart';
+import '../views/hidden_courses_management_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -141,6 +142,21 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) => CourseColorManagementView(
+                                  viewModel: widget.viewModel,
+                                ),
+                              ),
+                            ).then((_) => setState(() {}));
+                          },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.visibility_off),
+                          title: const Text('隐藏课程管理'),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HiddenCoursesManagementView(
                                   viewModel: widget.viewModel,
                                 ),
                               ),

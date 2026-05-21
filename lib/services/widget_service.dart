@@ -35,13 +35,22 @@ class WidgetService {
         await HomeWidget.setAppGroupId(appGroupId);
       }
 
+      final filteredApiInstances = vm.scheduleData!.instances
+          .where((e) => !vm.isCourseHidden(e))
+          .map((e) => e.toJson())
+          .toList();
+
+      final filteredCustomInstances = vm.customCourses
+          .expand((e) => e.toInstances())
+          .where((e) => !vm.isCourseHidden(e))
+          .map((e) => e.toJson())
+          .toList();
+
       final Map<String, dynamic> exportData = {
         'week_1_monday': vm.scheduleData!.week1Monday,
         'instances': [
-          ...vm.scheduleData!.instances.map((e) => e.toJson()),
-          ...vm.customCourses
-              .expand((e) => e.toInstances())
-              .map((e) => e.toJson()),
+          ...filteredApiInstances,
+          ...filteredCustomInstances,
         ],
       };
 

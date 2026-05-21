@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
+import '../models/hidden_rule_model.dart';
 
 class CourseDetailView extends StatelessWidget {
   final CourseInstance course;
@@ -89,6 +90,8 @@ class CourseDetailView extends StatelessWidget {
                         const SizedBox(height: 16),
                         _buildDescriptionSection(context, course.description!),
                       ],
+                      const SizedBox(height: 16),
+                      _buildManagementSection(context),
                       // 底部留白，防止被系统手柄或底栏遮挡
                       const SizedBox(height: 40),
                     ],
@@ -230,6 +233,210 @@ class CourseDetailView extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildManagementSection(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(left: 4, bottom: 8),
+          child: Text(
+            '快捷管理',
+            style: TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey[600],
+            ),
+          ),
+        ),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey[900]
+                : const Color(0xFFF5F5F7),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              ListTile(
+                leading: const Icon(Icons.visibility_off, color: Colors.orange),
+                title: const Text('隐藏此课程', style: TextStyle(fontWeight: FontWeight.w500)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => _showHideOptions(context),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showHideOptions(BuildContext context) {
+    final timeSlotText = '周${getChineseDay(course.day)} 第${course.periods.join(', ')}节';
+    final singleText = '第${course.week}周 周${getChineseDay(course.day)} 第${course.periods.join(', ')}节';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        final bgColor = isDark ? const Color(0xFF1C1C1E) : Colors.white;
+        final dividerColor = isDark ? Colors.white10 : Colors.black12;
+
+        return Container(
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                width: 36,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2.5),
+                ),
+              ),
+              Text(
+                '选择隐藏范围',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '隐藏后的课程不会在课表显示，日历和桌面小组件也会自动忽略',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildOptionButton(
+                ctx,
+                title: '隐藏全部该课程',
+                subtitle: '隐藏所有周次的《${course.course}》',
+                icon: Icons.layers_clear,
+                onTap: () {
+                  final rule = HiddenRule(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    type: 'all',
+                    courseName: course.course,
+                    displayText: '${course.course} (全部)',
+                  );
+                  viewModel.addHiddenRule(rule);
+                  viewModel.triggerToast('已隐藏全部该课程');
+                  Navigator.pop(ctx); // Close option sheet
+                  Navigator.pop(context); // Close detail sheet
+                },
+              ),
+              Container(height: 1, color: dividerColor, margin: const EdgeInsets.symmetric(vertical: 4)),
+              _buildOptionButton(
+                ctx,
+                title: '隐藏此时间段的全部该课程',
+                subtitle: '仅隐藏《${course.course}》的【$timeSlotText】时段',
+                icon: Icons.alarm_off,
+                onTap: () {
+                  final rule = HiddenRule(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    type: 'time_slot',
+                    courseName: course.course,
+                    day: course.day,
+                    periods: course.periods,
+                    displayText: '${course.course} ($timeSlotText)',
+                  );
+                  viewModel.addHiddenRule(rule);
+                  viewModel.triggerToast('已隐藏该时段课程');
+                  Navigator.pop(ctx);
+                  Navigator.pop(context);
+                },
+              ),
+              Container(height: 1, color: dividerColor, margin: const EdgeInsets.symmetric(vertical: 4)),
+              _buildOptionButton(
+                ctx,
+                title: '隐藏此节课程',
+                subtitle: '仅隐藏【$singleText】的单节课程',
+                icon: Icons.event_busy,
+                onTap: () {
+                  final rule = HiddenRule(
+                    id: DateTime.now().millisecondsSinceEpoch.toString(),
+                    type: 'single',
+                    courseName: course.course,
+                    instanceId: course.id,
+                    week: course.week,
+                    displayText: '${course.course} ($singleText)',
+                  );
+                  viewModel.addHiddenRule(rule);
+                  viewModel.triggerToast('已隐藏此节课程');
+                  Navigator.pop(ctx);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildOptionButton(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.orange.withOpacity(0.1),
+              child: Icon(icon, color: Colors.orange, size: 20),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: isDark ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Colors.grey, size: 20),
+          ],
+        ),
       ),
     );
   }

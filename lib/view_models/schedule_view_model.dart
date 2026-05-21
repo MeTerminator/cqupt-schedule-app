@@ -9,11 +9,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/schedule_model.dart';
 import '../models/theme_model.dart';
+import '../models/hidden_rule_model.dart';
 import '../services/widget_service.dart';
 
 class ScheduleViewModel extends ChangeNotifier {
   ScheduleResponse? scheduleData;
   List<CustomCourse> customCourses = [];
+  List<HiddenRule> hiddenRules = [];
   bool isLoading = false;
   int selectedWeek = 1;
   String currentId = "";
@@ -36,6 +38,7 @@ class ScheduleViewModel extends ChangeNotifier {
   static const String kCourseCustomColorMapKey = "course_custom_color_map";
   static const String kThemeSettingsKey = "theme_settings";
   static const String kWebBackgroundImageKey = "web_background_image_base64";
+  static const String kHiddenRulesKey = "hidden_rules";
 
   Uint8List? _webBackgroundImageBytes; // Web 平台背景图字节缓存
 
@@ -46,6 +49,7 @@ class ScheduleViewModel extends ChangeNotifier {
     );
     loadCustomCourses();
     loadThemeSettings();
+    loadHiddenRules();
   }
 
   @override
@@ -509,6 +513,69 @@ class ScheduleViewModel extends ChangeNotifier {
     // 不在这里 sync，由 startup() 统一处理
   }
 
+  Future<void> saveHiddenRules() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String data = jsonEncode(
+      hiddenRules.map((e) => e.toJson()).toList(),
+    );
+    await prefs.setString(kHiddenRulesKey, data);
+  }
+
+  Future<void> loadHiddenRules() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? data = prefs.getString(kHiddenRulesKey);
+    if (data != null) {
+      try {
+        final List<dynamic> jsonList = jsonDecode(data);
+        hiddenRules = jsonList.map((e) => HiddenRule.fromJson(e)).toList();
+        notifyListeners();
+      } catch (e) {
+        debugPrint("Failed to load hidden rules: $e");
+      }
+    }
+  }
+
+  bool isCourseHidden(CourseInstance course) {
+    for (var rule in hiddenRules) {
+      if (rule.type == 'all') {
+        if (rule.courseName == course.course) {
+          return true;
+        }
+      } else if (rule.type == 'time_slot') {
+        if (rule.courseName == course.course &&
+            rule.day == course.day &&
+            rule.periods != null &&
+            course.periods.isNotEmpty &&
+            rule.periods!.first == course.periods.first) {
+          return true;
+        }
+      } else if (rule.type == 'single') {
+        if (rule.instanceId == course.id) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  Future<void> addHiddenRule(HiddenRule rule) async {
+    hiddenRules.add(rule);
+    await saveHiddenRules();
+    notifyListeners();
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
+  }
+
+  Future<void> removeHiddenRuleById(String ruleId) async {
+    hiddenRules.removeWhere((e) => e.id == ruleId);
+    await saveHiddenRules();
+    notifyListeners();
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
+  }
+
   List<CourseInstance> allCourses(int week) {
     final apiList =
         scheduleData?.instances.where((e) => e.week == week).toList() ?? [];
@@ -516,7 +583,7 @@ class ScheduleViewModel extends ChangeNotifier {
         .expand((e) => e.toInstances())
         .where((e) => e.week == week)
         .toList();
-    return [...apiList, ...customList];
+    return [...apiList, ...customList].where((c) => !isCourseHidden(c)).toList();
   }
 
   String calculateDate(int week, int day) {
