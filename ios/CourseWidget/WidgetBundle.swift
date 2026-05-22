@@ -221,63 +221,39 @@ struct CourseAttributes: ActivityAttributes {
 struct CourseLockScreenCard: View {
     let context: ActivityViewContext<CourseAttributes>
     
+    // 直接用 Date() 比较，避免 TimelineView 初始渲染时 timelineContext.date
+    // 可能等于上一个 explicit 节点（已过期）导致 isBeforeClass 误判为 false 的 bug
+    private var isBeforeClass: Bool { Date() < context.state.startTime }
+    
     var body: some View {
-        TimelineView(.explicit([context.state.startTime])) { timelineContext in
-            let isBeforeClass = timelineContext.date < context.state.startTime
-            
-            HStack {
-                // 左侧课程名与教室
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(context.state.courseName)
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                        .lineLimit(1)
-                    
-                    HStack(spacing: 4) {
-                        Image(systemName: "mappin.and.ellipse")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Text(context.state.classroom)
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                
-                Spacer()
-                
-                // 右侧倒计时
-                if isBeforeClass {
-                    // 课前倒计时：00:00 样式
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("即将上课")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                        Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
-                            .font(.title2.bold().monospacedDigit())
-                            .foregroundColor(.blue)
-                    }
-                } else {
-                    // 上课中倒计时：下课时间与进度环
-                    HStack(spacing: 8) {
-                        VStack(alignment: .trailing, spacing: 2) {
-                            Text("下课倒计时")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
-                                .font(.subheadline.bold().monospacedDigit())
-                                .foregroundColor(.green)
-                        }
-                        
-                        ProgressView(timerInterval: context.state.startTime...context.state.endTime, countsDown: true)
-                            .progressViewStyle(.circular)
-                            .tint(.green)
-                    }
-                }
+        let isBeforeClass = Date() < context.state.startTime
+        let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+        let stateString = isBeforeClass ? "课间" : "上课"
+        let locationString = "\(stateString) · \(context.state.classroom)"
+        
+        HStack(alignment: .center) {
+            // 左侧：课程名称 + 状态/地点
+            VStack(alignment: .leading, spacing: 4) {
+                Text(context.state.courseName)
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                Text(locationString)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+            
+            Spacer()
+            
+            // 右侧：仅倒计时
+            Text(timerInterval: Date.now...targetDate, countsDown: true)
+                .font(.title.bold().monospacedDigit())
+                .foregroundColor(isBeforeClass ? .blue : .green)
+                .frame(maxWidth: 110, alignment: .trailing)
         }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }
 
@@ -291,82 +267,86 @@ struct CourseLiveActivity: Widget {
         } dynamicIsland: { context in
             DynamicIsland {
                 // ── 灵动岛展开态 ──
+                
+                // 挖孔左侧：重邮课表
                 DynamicIslandExpandedRegion(.leading) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(context.state.courseName)
-                            .font(.headline)
-                            .foregroundColor(.primary)
-                            .lineLimit(1)
-                        HStack(spacing: 4) {
-                            Image(systemName: "mappin.and.ellipse")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                            Text(context.state.classroom)
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                                .lineLimit(1)
-                        }
-                    }
-                    .padding(.leading, 8)
+                    Text("重邮课表")
+                        .font(.callout.bold())
+                        .foregroundColor(.primary)
+                        .padding(.leading, 10)
                 }
                 
+                // 挖孔右侧：离上课/离下课
                 DynamicIslandExpandedRegion(.trailing) {
-                    TimelineView(.explicit([context.state.startTime])) { timelineContext in
-                        let isBeforeClass = timelineContext.date < context.state.startTime
-                        
-                        VStack(alignment: .trailing, spacing: 2) {
-                            if isBeforeClass {
-                                Text("即将上课")
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
-                                    .font(.title3.bold().monospacedDigit())
-                                    .foregroundColor(.blue)
-                            } else {
-                                HStack(spacing: 6) {
-                                    Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
-                                        .font(.caption.bold().monospacedDigit())
-                                        .foregroundColor(.green)
-                                    ProgressView(timerInterval: context.state.startTime...context.state.endTime, countsDown: true)
-                                        .progressViewStyle(.circular)
-                                        .tint(.green)
-                                        .scaleEffect(0.8)
-                                }
-                            }
+                    let isBeforeClass = Date() < context.state.startTime
+                    let labelText = isBeforeClass ? "离上课" : "离下课"
+                    Text(labelText)
+                        .font(.callout.bold())
+                        .foregroundColor(isBeforeClass ? .blue : .green)
+                        .padding(.trailing, 10)
+                }
+                
+                // 胶囊下方全宽区域：两行左侧信息 + 右侧大字体倒计时
+                // 内容放在 .bottom，以实现右侧时间与左侧两行整体居中对齐
+                DynamicIslandExpandedRegion(.bottom) {
+                    let isBeforeClass = Date() < context.state.startTime
+                    let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+                    
+                    HStack(alignment: .center) {
+                        // 左侧：地点 (上方) + 课程名称 (下方)
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(context.state.classroom)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .lineLimit(1)
+                            Text(context.state.courseName)
+                                .font(.headline)
+                                .foregroundColor(.primary)
+                                .lineLimit(1)
                         }
-                        .padding(.trailing, 8)
+                        
+                        Spacer()
+                        
+                        // 右侧：倒计时
+                        Text(timerInterval: Date.now...targetDate, countsDown: true)
+                            .font(.title.bold().monospacedDigit())
+                            .foregroundColor(isBeforeClass ? .blue : .green)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: 110, alignment: .trailing)
                     }
+                    .padding(.horizontal, 14)
+                    .padding(.top, 8)
+                    .padding(.bottom, 6)
                 }
                 
             } compactLeading: {
-                TimelineView(.explicit([context.state.startTime])) { timelineContext in
-                    let isBeforeClass = timelineContext.date < context.state.startTime
-                    Image(systemName: isBeforeClass ? "book.closed.fill" : "book.fill")
-                        .foregroundStyle(isBeforeClass ? Color.blue : Color.green)
-                        .font(.system(size: 13))
-                }
+                let isBeforeClass = Date() < context.state.startTime
+                Image(systemName: isBeforeClass ? "book.closed.fill" : "book.fill")
+                    .foregroundStyle(isBeforeClass ? Color.blue : Color.green)
+                    .font(.system(size: 13))
             } compactTrailing: {
-                TimelineView(.explicit([context.state.startTime])) { timelineContext in
-                    let isBeforeClass = timelineContext.date < context.state.startTime
-                    
-                    if isBeforeClass {
-                        Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.blue)
-                            .monospacedDigit()
-                    } else {
-                        Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.green)
-                            .monospacedDigit()
-                    }
+                let isBeforeClass = Date() < context.state.startTime
+                if isBeforeClass {
+                    Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.blue)
+                        .monospacedDigit()
+                } else {
+                    Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.green)
+                        .monospacedDigit()
                 }
             } minimal: {
-                TimelineView(.explicit([context.state.startTime])) { timelineContext in
-                    let isBeforeClass = timelineContext.date < context.state.startTime
-                    Image(systemName: "book.fill")
-                        .foregroundColor(isBeforeClass ? .blue : .green)
-                }
+                // minimal 形态：显示剩余分钟数，如 "23m"，超过 99 分钟显示 "99+"
+                let isBeforeClass = Date() < context.state.startTime
+                let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+                let remainingMinutes = max(0, Int(targetDate.timeIntervalSinceNow / 60))
+                let label = remainingMinutes > 99 ? "99+" : "\(remainingMinutes)m"
+                Text(label)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .foregroundColor(isBeforeClass ? .blue : .green)
+                    .minimumScaleFactor(0.7)
             }
         }
     }
