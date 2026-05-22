@@ -24,6 +24,7 @@ struct CourseAttributes: ActivityAttributes {
         var classroom: String
         var startTime: Date
         var endTime: Date
+        var leadMinutes: Int
     }
 }
 
@@ -213,7 +214,7 @@ extension UUID {
                                 attributes: attributes
                             )
                             
-                            try await alarmManager.schedule(id: uuid, configuration: alarmConfiguration)
+                            _ = try await alarmManager.schedule(id: uuid, configuration: alarmConfiguration)
                         }
                         DispatchQueue.main.async {
                             result(true)
@@ -245,7 +246,7 @@ extension UUID {
                 }
             } else if call.method == "startCourseLiveActivity" {
                 guard let args = call.arguments as? [String: Any],
-                      let courseId = args["courseId"] as? String,
+                      args["courseId"] is String,
                       let courseName = args["courseName"] as? String,
                       let classroom = args["classroom"] as? String,
                       let startTimeRaw = args["startTimeInMillis"],
@@ -256,6 +257,7 @@ extension UUID {
                 
                 let startTimeMillis = (startTimeRaw as? NSNumber)?.int64Value ?? 0
                 let endTimeMillis = (endTimeRaw as? NSNumber)?.int64Value ?? 0
+                let leadMinutes = args["leadMinutes"] as? Int ?? 15
                 
                 let startDate = Date(timeIntervalSince1970: Double(startTimeMillis) / 1000.0)
                 let endDate = Date(timeIntervalSince1970: Double(endTimeMillis) / 1000.0)
@@ -271,7 +273,8 @@ extension UUID {
                         courseName: courseName,
                         classroom: classroom,
                         startTime: startDate,
-                        endTime: endDate
+                        endTime: endDate,
+                        leadMinutes: leadMinutes
                     )
                     
                     do {

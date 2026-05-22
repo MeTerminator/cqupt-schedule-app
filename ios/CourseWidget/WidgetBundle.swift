@@ -101,7 +101,8 @@ struct AlarmLockScreenCard: View {
     @ViewBuilder
     private var timerLabel: some View {
         if case let .countdown(cd) = context.state.mode {
-            Text(timerInterval: Date.now...cd.fireDate, countsDown: true)
+            let safeRange = Date.now...max(Date.now, cd.fireDate)
+            Text(timerInterval: safeRange, countsDown: true)
                 .font(.title.bold().monospacedDigit())
                 .foregroundColor(.orange)
                 .frame(maxWidth: 110, alignment: .trailing)
@@ -132,7 +133,8 @@ struct AlarmLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     VStack(alignment: .leading, spacing: 2) {
                         if case let .countdown(cd) = context.state.mode {
-                            Text(timerInterval: Date.now...cd.fireDate, countsDown: true)
+                            let safeRange = Date.now...max(Date.now, cd.fireDate)
+                            Text(timerInterval: safeRange, countsDown: true)
                                 .font(.system(size: 28, weight: .bold))
                                 .foregroundColor(.orange)
                         } else if case let .paused(ps) = context.state.mode {
@@ -178,7 +180,8 @@ struct AlarmLiveActivity: Widget {
             } compactTrailing: {
                 // 紧凑态 Trailing：倒计时数字 / 暂停点 / 响铃点
                 if case let .countdown(cd) = context.state.mode {
-                    Text(timerInterval: Date.now...cd.fireDate, countsDown: true)
+                    let safeRange = Date.now...max(Date.now, cd.fireDate)
+                    Text(timerInterval: safeRange, countsDown: true)
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.orange)
                         .frame(maxWidth: 44, alignment: .trailing)
@@ -213,6 +216,7 @@ struct CourseAttributes: ActivityAttributes {
         var classroom: String
         var startTime: Date
         var endTime: Date
+        var leadMinutes: Int
     }
 }
 
@@ -222,9 +226,14 @@ struct CourseAttributes: ActivityAttributes {
 struct CourseLockScreenCard: View {
     let context: ActivityViewContext<CourseAttributes>
     
-    // 直接用 Date() 比较，避免 TimelineView 初始渲染时 timelineContext.date
-    // 可能等于上一个 explicit 节点（已过期）导致 isBeforeClass 误判为 false 的 bug
     private var isBeforeClass: Bool { Date() < context.state.startTime }
+    
+    private var isWithinLeadOrOngoing: Bool {
+        let now = Date()
+        let leadSeconds = Double(context.state.leadMinutes) * 60.0
+        let leadStartDate = context.state.startTime.addingTimeInterval(-leadSeconds)
+        return (now >= leadStartDate && now < context.state.startTime) || (now >= context.state.startTime && now < context.state.endTime)
+    }
     
     var body: some View {
         let isBeforeClass = Date() < context.state.startTime
@@ -247,11 +256,29 @@ struct CourseLockScreenCard: View {
             
             Spacer()
             
-            // 右侧：仅倒计时
-            Text(timerInterval: Date.now...targetDate, countsDown: true)
-                .font(.title.bold().monospacedDigit())
-                .foregroundColor(isBeforeClass ? .blue : .green)
+            // 右侧：倒计时或上课时间
+            if isWithinLeadOrOngoing {
+                Text(timerInterval: Date.now...max(Date.now, targetDate), countsDown: true)
+                    .font(.title.bold().monospacedDigit())
+                    .foregroundColor(isBeforeClass ? .blue : .green)
+                    .frame(maxWidth: 110, alignment: .trailing)
+            } else {
+                VStack(alignment: .trailing, spacing: 2) {
+                    if Date() >= context.state.endTime {
+                        Text("已下课")
+                            .font(.headline.bold())
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("上课时间")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text(context.state.startTime, style: .time)
+                            .font(.title3.bold())
+                            .foregroundColor(.blue)
+                    }
+                }
                 .frame(maxWidth: 110, alignment: .trailing)
+            }
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
@@ -262,6 +289,13 @@ struct CourseLockScreenCard: View {
 
 @available(iOS 26.0, *)
 struct CourseLiveActivity: Widget {
+    private func isWithinLeadOrOngoing(context: ActivityViewContext<CourseAttributes>) -> Bool {
+        let now = Date()
+        let leadSeconds = Double(context.state.leadMinutes) * 60.0
+        let leadStartDate = context.state.startTime.addingTimeInterval(-leadSeconds)
+        return (now >= leadStartDate && now < context.state.startTime) || (now >= context.state.startTime && now < context.state.endTime)
+    }
+
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CourseAttributes.self) { context in
             CourseLockScreenCard(context: context)
@@ -288,10 +322,10 @@ struct CourseLiveActivity: Widget {
                 }
                 
                 // 胶囊下方全宽区域：两行左侧信息 + 右侧大字体倒计时
-                // 内容放在 .bottom，以实现右侧时间与左侧两行整体居中对齐
                 DynamicIslandExpandedRegion(.bottom) {
                     let isBeforeClass = Date() < context.state.startTime
                     let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+                    let showTimer = isWithinLeadOrOngoing(context: context)
                     
                     HStack(alignment: .center) {
                         // 左侧：地点 (上方) + 课程名称 (下方)
@@ -308,12 +342,30 @@ struct CourseLiveActivity: Widget {
                         
                         Spacer()
                         
-                        // 右侧：倒计时
-                        Text(timerInterval: Date.now...targetDate, countsDown: true)
-                            .font(.title.bold())
-                            .foregroundColor(isBeforeClass ? .blue : .green)
-                            .minimumScaleFactor(0.8)
+                        // 右侧：倒计时或上课时间
+                        if showTimer {
+                            Text(timerInterval: Date.now...max(Date.now, targetDate), countsDown: true)
+                                .font(.title.bold())
+                                .foregroundColor(isBeforeClass ? .blue : .green)
+                                .minimumScaleFactor(0.8)
+                                .frame(maxWidth: 110, alignment: .trailing)
+                        } else {
+                            VStack(alignment: .trailing, spacing: 2) {
+                                if Date() >= context.state.endTime {
+                                    Text("已下课")
+                                        .font(.headline.bold())
+                                        .foregroundColor(.secondary)
+                                } else {
+                                    Text("上课时间")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text(context.state.startTime, style: .time)
+                                        .font(.title2.bold())
+                                        .foregroundColor(.blue)
+                                }
+                            }
                             .frame(maxWidth: 110, alignment: .trailing)
+                        }
                     }
                     .padding(.horizontal, 14)
                     .padding(.top, 8)
@@ -321,33 +373,55 @@ struct CourseLiveActivity: Widget {
                 }
                 
             } compactLeading: {
+                let showTimer = isWithinLeadOrOngoing(context: context)
                 let isBeforeClass = Date() < context.state.startTime
-                Image(systemName: isBeforeClass ? "book.closed.fill" : "book.fill")
-                    .foregroundStyle(isBeforeClass ? Color.blue : Color.green)
-                    .font(.system(size: 13))
+                if showTimer {
+                    Image(systemName: isBeforeClass ? "book.closed.fill" : "book.fill")
+                        .foregroundStyle(isBeforeClass ? Color.blue : Color.green)
+                        .font(.system(size: 13))
+                } else {
+                    Image(systemName: "book.closed")
+                        .foregroundColor(.secondary)
+                        .font(.system(size: 13))
+                }
             } compactTrailing: {
+                let showTimer = isWithinLeadOrOngoing(context: context)
                 let isBeforeClass = Date() < context.state.startTime
-                if isBeforeClass {
-                    Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
+                if showTimer {
+                    let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+                    Text(timerInterval: Date.now...max(Date.now, targetDate), countsDown: true)
                         .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.blue)
+                        .foregroundColor(isBeforeClass ? .blue : .green)
                         .frame(maxWidth: 50, alignment: .trailing)
                 } else {
-                    Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.green)
-                        .frame(maxWidth: 50, alignment: .trailing)
+                    if Date() >= context.state.endTime {
+                        Text("已下")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: 50, alignment: .trailing)
+                    } else {
+                        Text(context.state.startTime, style: .time)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(.secondary)
+                            .frame(maxWidth: 50, alignment: .trailing)
+                    }
                 }
             } minimal: {
-                // minimal 形态：显示剩余分钟数，如 "23m"，超过 99 分钟显示 "99+"
-                let isBeforeClass = Date() < context.state.startTime
-                let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
-                let remainingMinutes = max(0, Int(targetDate.timeIntervalSinceNow / 60))
-                let label = remainingMinutes > 99 ? "99+" : "\(remainingMinutes)m"
-                Text(label)
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .foregroundColor(isBeforeClass ? .blue : .green)
-                    .minimumScaleFactor(0.7)
+                let showTimer = isWithinLeadOrOngoing(context: context)
+                if showTimer {
+                    let isBeforeClass = Date() < context.state.startTime
+                    let targetDate = isBeforeClass ? context.state.startTime : context.state.endTime
+                    let remainingMinutes = max(0, Int(targetDate.timeIntervalSinceNow / 60))
+                    let label = remainingMinutes > 99 ? "99+" : "\(remainingMinutes)m"
+                    Text(label)
+                        .font(.system(size: 9, weight: .bold, design: .rounded))
+                        .foregroundColor(isBeforeClass ? .blue : .green)
+                        .minimumScaleFactor(0.7)
+                } else {
+                    Image(systemName: "book.closed")
+                        .font(.system(size: 9))
+                        .foregroundColor(.secondary)
+                }
             }
         }
     }

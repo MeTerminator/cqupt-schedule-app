@@ -418,6 +418,7 @@ class AlarmService {
     required String classroom,
     required DateTime startTime,
     required DateTime endTime,
+    required int leadMinutes,
   }) async {
     if (!Platform.isIOS) return false;
     try {
@@ -427,6 +428,7 @@ class AlarmService {
         'classroom': classroom,
         'startTimeInMillis': startTime.millisecondsSinceEpoch,
         'endTimeInMillis': endTime.millisecondsSinceEpoch,
+        'leadMinutes': leadMinutes,
       });
       return result ?? false;
     } catch (e) {
@@ -527,14 +529,11 @@ class AlarmService {
             break;
           }
         }
-        // 2. 如果即将上课（在提前 N 分钟内）
+        // 2. 如果即将上课（为了让灵动岛长期驻留并自然过渡，只要是今天的后续课程都作为目标）
         if (now.isBefore(startTime)) {
           if (beforeEnabled) {
-            final diffMins = startTime.difference(now).inMinutes;
-            if (diffMins <= leadMinutes) {
-              targetPeriod = period;
-              break;
-            }
+            targetPeriod = period;
+            break;
           }
         }
       }
@@ -550,6 +549,7 @@ class AlarmService {
           classroom: course.location.isEmpty ? "无教室" : course.location,
           startTime: startTime,
           endTime: endTime,
+          leadMinutes: leadMinutes,
         );
       } else {
         // 如果没有符合要求的课程，立即停止活动小组件显示
