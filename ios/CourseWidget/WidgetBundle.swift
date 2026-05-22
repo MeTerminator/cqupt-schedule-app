@@ -102,15 +102,17 @@ struct AlarmLockScreenCard: View {
     private var timerLabel: some View {
         if case let .countdown(cd) = context.state.mode {
             Text(timerInterval: Date.now...cd.fireDate, countsDown: true)
-                .font(.title.bold())
+                .font(.title.bold().monospacedDigit())
                 .foregroundColor(.orange)
+                .frame(maxWidth: 110, alignment: .trailing)
         } else if case let .paused(ps) = context.state.mode {
             let remaining = ps.totalCountdownDuration - ps.previouslyElapsedDuration
             let m = Int(remaining) / 60
             let s = Int(remaining) % 60
             Text(String(format: "%d:%02d", m, s))
-                .font(.title.bold())
+                .font(.title.bold().monospacedDigit())
                 .foregroundColor(.secondary)
+                .frame(maxWidth: 110, alignment: .trailing)
         }
     }
 }
@@ -154,9 +156,9 @@ struct AlarmLiveActivity: Widget {
                     let alarmId = context.attributes.metadata?.alarmId ?? ""
                     Button(intent: CancelAlarmIntent(alarmId: alarmId)) {
                         Image(systemName: "xmark")
-                            .font(.system(size: 9, weight: .bold))
+                            .font(.system(size: 12, weight: .bold))
                             .foregroundColor(.white)
-                            .frame(width: 20, height: 20)
+                            .frame(width: 28, height: 28)
                             .background(Color.white.opacity(0.15))
                             .clipShape(Circle())
                     }
