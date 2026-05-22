@@ -179,10 +179,9 @@ struct AlarmLiveActivity: Widget {
                 // 紧凑态 Trailing：倒计时数字 / 暂停点 / 响铃点
                 if case let .countdown(cd) = context.state.mode {
                     Text(timerInterval: Date.now...cd.fireDate, countsDown: true)
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundColor(.orange)
-                        .monospacedDigit()
-                        .frame(maxWidth: 44)
+                        .frame(maxWidth: 44, alignment: .trailing)
                 } else if case .paused = context.state.mode {
                     Image(systemName: "pause.fill")
                         .font(.system(size: 11, weight: .bold))
@@ -311,7 +310,7 @@ struct CourseLiveActivity: Widget {
                         
                         // 右侧：倒计时
                         Text(timerInterval: Date.now...targetDate, countsDown: true)
-                            .font(.title.bold().monospacedDigit())
+                            .font(.title.bold())
                             .foregroundColor(isBeforeClass ? .blue : .green)
                             .minimumScaleFactor(0.8)
                             .frame(maxWidth: 110, alignment: .trailing)
@@ -330,14 +329,14 @@ struct CourseLiveActivity: Widget {
                 let isBeforeClass = Date() < context.state.startTime
                 if isBeforeClass {
                     Text(timerInterval: Date.now...context.state.startTime, countsDown: true)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.blue)
-                        .monospacedDigit()
+                        .frame(maxWidth: 50, alignment: .trailing)
                 } else {
                     Text(timerInterval: Date.now...context.state.endTime, countsDown: true)
-                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 11, weight: .semibold))
                         .foregroundColor(.green)
-                        .monospacedDigit()
+                        .frame(maxWidth: 50, alignment: .trailing)
                 }
             } minimal: {
                 // minimal 形态：显示剩余分钟数，如 "23m"，超过 99 分钟显示 "99+"
