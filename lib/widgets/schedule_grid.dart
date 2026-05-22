@@ -234,6 +234,8 @@ class ScheduleGrid extends StatelessWidget {
     List<CourseInstance> courses,
     bool isDark,
   ) {
+    final commonFreePeriods = viewModel.getCommonFreePeriods(weekToShow);
+
     return SizedBox(
       height: hourHeight * 12,
       child: LayoutBuilder(
@@ -252,6 +254,110 @@ class ScheduleGrid extends StatelessWidget {
                   ),
                 );
               }),
+
+              // 绘制共同空闲时间背景标记 (显示在课程层级下方)
+              if (viewModel.showCommonFreeTime && commonFreePeriods.isNotEmpty)
+                ...List.generate(7, (dayIdx) {
+                  final day = dayIdx + 1; // 1-7
+                  
+                  // 找出该天的所有空闲节次并排序
+                  final dayFreePeriods = <int>[];
+                  for (int period = 1; period <= 12; period++) {
+                    if (commonFreePeriods.contains("${day}_$period")) {
+                      dayFreePeriods.add(period);
+                    }
+                  }
+                  dayFreePeriods.sort();
+
+                  // 将连续的节次合并为组
+                  final groups = <List<int>>[];
+                  if (dayFreePeriods.isNotEmpty) {
+                    var currentGroup = [dayFreePeriods[0]];
+                    for (int i = 1; i < dayFreePeriods.length; i++) {
+                      if (dayFreePeriods[i] == dayFreePeriods[i - 1] + 1) {
+                        currentGroup.add(dayFreePeriods[i]);
+                      } else {
+                        groups.add(currentGroup);
+                        currentGroup = [dayFreePeriods[i]];
+                      }
+                    }
+                    groups.add(currentGroup);
+                  }
+
+                  // 为每个合并后的组绘制一格
+                  return groups.map((g) {
+                    final startPeriod = g.first;
+                    final periodCount = g.length;
+
+                    return Positioned(
+                      left: (day - 1) * colW + 2,
+                      top: (startPeriod - 1) * hourHeight + 2,
+                      width: colW - 4,
+                      height: periodCount * hourHeight - 4,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: isDark
+                                ? [
+                                    const Color(0x6000F2FE),
+                                    const Color(0x604FACFE),
+                                  ]
+                                : [
+                                    const Color(0x4C00F2FE),
+                                    const Color(0x4C4FACFE),
+                                  ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.teal.withOpacity(0.8)
+                                : Colors.teal.withOpacity(0.65),
+                            width: 1.2,
+                            style: BorderStyle.solid,
+                          ),
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.coffee_rounded,
+                              size: periodCount > 1 ? 16 : 13,
+                              color: isDark
+                                  ? Colors.teal[100]
+                                  : Colors.teal[800],
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '共同空闲',
+                              style: TextStyle(
+                                fontSize: periodCount > 1 ? 9 : 8,
+                                fontWeight: FontWeight.bold,
+                                color: isDark
+                                    ? Colors.teal[50]
+                                    : Colors.teal[900],
+                              ),
+                            ),
+                            if (periodCount > 1) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '$periodCount节连空',
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  color: isDark
+                                      ? Colors.teal[100]
+                                      : Colors.teal[800],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList();
+                }).expand((widgets) => widgets),
+
               ...courses.map((course) {
                 final geoInfo = calculateGeometry(course);
                 return Positioned(

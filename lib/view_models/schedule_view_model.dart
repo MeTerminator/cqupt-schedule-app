@@ -23,6 +23,15 @@ class ScheduleViewModel extends ChangeNotifier {
   Map<String, String> courseCustomColorMap = {}; // 课程自定义颜色 Hex 映射
   ThemeSettings currentTheme = ThemeSettings.defaultTheme(); // 当前主题设置
 
+  // --- 多账号与共同空闲时间管理状态 ---
+  List<String> userProfiles = []; // 所有已添加学号列表
+  Map<String, ScheduleResponse> loadedSchedules = {}; // 缓存各用户的课表
+  Map<String, List<CustomCourse>> loadedCustomCourses = {}; // 缓存各用户的自定义行程
+  Map<String, List<HiddenRule>> loadedHiddenRules = {}; // 缓存各用户的隐藏课表规则
+
+  bool showCommonFreeTime = false; // 是否显示共同空闲时间
+  List<String> checkedUserIds = []; // 计算共同空闲时间勾选的用户列表
+
   String toastMessage = "";
   bool showToast = false;
 
@@ -51,6 +60,7 @@ class ScheduleViewModel extends ChangeNotifier {
     loadCustomCourses();
     loadThemeSettings();
     loadHiddenRules();
+    loadCommonFreeTimeSettings(); // 加载共同空闲时间设置
   }
 
   @override
@@ -214,6 +224,8 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> startup(String studentId) async {
     currentId = studentId;
     await loadColorMap();
+    await loadCommonFreeTimeSettings();
+    await loadAllProfilesData();
     if (kIsWeb) {
       await loadWebBackgroundImage();
     } else {
@@ -275,36 +287,65 @@ class ScheduleViewModel extends ChangeNotifier {
     _saveCustomColorMap();
   }
 
-  Future<void> _saveColorMap() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(courseColorMap);
-    await prefs.setString(kCourseColorMapKey, data);
-  }
+  // --- Namespaced Course Color Loading and Saving ---
 
-  Future<void> _saveCustomColorMap() async {
+  Future<void> loadColorMapForUser(String studentId) async {
     final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(courseCustomColorMap);
-    await prefs.setString(kCourseCustomColorMapKey, data);
-  }
-
-  Future<void> loadColorMap() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString(kCourseColorMapKey);
+    String? data = prefs.getString('${kCourseColorMapKey}_$studentId');
+    if (data == null) {
+      // 兼容旧版全局键
+      data = prefs.getString(kCourseColorMapKey);
+      if (data != null) {
+        await prefs.setString('${kCourseColorMapKey}_$studentId', data);
+      }
+    }
     if (data != null) {
       final Map<String, dynamic> jsonMap = jsonDecode(data);
       courseColorMap = jsonMap.map((key, value) => MapEntry(key, value as int));
-      notifyListeners();
+    } else {
+      courseColorMap = {};
     }
 
-    // 加载自定义颜色映射
-    final String? customData = prefs.getString(kCourseCustomColorMapKey);
+    String? customData = prefs.getString('${kCourseCustomColorMapKey}_$studentId');
+    if (customData == null) {
+      customData = prefs.getString(kCourseCustomColorMapKey);
+      if (customData != null) {
+        await prefs.setString('${kCourseCustomColorMapKey}_$studentId', customData);
+      }
+    }
     if (customData != null) {
       final Map<String, dynamic> jsonMap = jsonDecode(customData);
       courseCustomColorMap = jsonMap.map(
         (key, value) => MapEntry(key, value as String),
       );
-      notifyListeners();
+    } else {
+      courseCustomColorMap = {};
     }
+    notifyListeners();
+  }
+
+  Future<void> saveColorMapForUser(String studentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('${kCourseColorMapKey}_$studentId', jsonEncode(courseColorMap));
+    await prefs.setString('${kCourseCustomColorMapKey}_$studentId', jsonEncode(courseCustomColorMap));
+    
+    // 如果是当前正在使用的账号，同步更新旧版全局键以供其他依赖访问
+    if (studentId == currentId) {
+      await prefs.setString(kCourseColorMapKey, jsonEncode(courseColorMap));
+      await prefs.setString(kCourseCustomColorMapKey, jsonEncode(courseCustomColorMap));
+    }
+  }
+
+  Future<void> _saveColorMap() async {
+    await saveColorMapForUser(currentId);
+  }
+
+  Future<void> _saveCustomColorMap() async {
+    await saveColorMapForUser(currentId);
+  }
+
+  Future<void> loadColorMap() async {
+    await loadColorMapForUser(currentId);
   }
 
   List<String> getAllCourseNames() {
@@ -377,7 +418,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
   Future<File> get _cacheFile async {
     final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/schedule_cache.json');
+    return File('${directory.path}/schedule_cache_$currentId.json');
   }
 
   Future<void> _saveToCache(String jsonStr) async {
@@ -388,6 +429,13 @@ class ScheduleViewModel extends ChangeNotifier {
   Future<void> loadFromCache({bool isInitial = false}) async {
     try {
       final file = await _cacheFile;
+      // 兼容/迁移旧版没有学号后缀的缓存文件
+      if (!await file.exists() && currentId.isNotEmpty) {
+        final legacyFile = File('${(await getApplicationDocumentsDirectory()).path}/schedule_cache.json');
+        if (await legacyFile.exists()) {
+          await legacyFile.copy(file.path);
+        }
+      }
       if (await file.exists()) {
         final jsonStr = await file.readAsString();
         scheduleData = ScheduleResponse.fromJson(jsonDecode(jsonStr));
@@ -507,46 +555,371 @@ class ScheduleViewModel extends ChangeNotifier {
     triggerToast("自定义行程已清空");
   }
 
-  /// 仅保存自定义课程到本地，不触发小组件刷新
-  Future<void> saveCustomCourses() async {
+  // --- Namespaced Custom Courses and Hidden Rules ---
+
+  Future<void> loadCustomCoursesForUser(String studentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    String? data = prefs.getString('${kCustomCoursesKey}_$studentId');
+    if (data == null) {
+      // 兼容旧版全局键
+      data = prefs.getString(kCustomCoursesKey);
+      if (data != null) {
+        await prefs.setString('${kCustomCoursesKey}_$studentId', data);
+      }
+    }
+    if (data != null) {
+      final List<dynamic> jsonList = jsonDecode(data);
+      customCourses = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
+    } else {
+      customCourses = [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> saveCustomCoursesForUser(String studentId) async {
     final prefs = await SharedPreferences.getInstance();
     final String data = jsonEncode(
       customCourses.map((e) => e.toJson()).toList(),
     );
-    await prefs.setString(kCustomCoursesKey, data);
-  }
+    await prefs.setString('${kCustomCoursesKey}_$studentId', data);
 
-  Future<void> loadCustomCourses() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString(kCustomCoursesKey);
-    if (data != null) {
-      final List<dynamic> jsonList = jsonDecode(data);
-      customCourses = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
-      notifyListeners();
+    if (studentId == currentId) {
+      await prefs.setString(kCustomCoursesKey, data);
     }
-    // 不在这里 sync，由 startup() 统一处理
   }
 
-  Future<void> saveHiddenRules() async {
+  Future<void> loadHiddenRulesForUser(String studentId) async {
     final prefs = await SharedPreferences.getInstance();
-    final String data = jsonEncode(
-      hiddenRules.map((e) => e.toJson()).toList(),
-    );
-    await prefs.setString(kHiddenRulesKey, data);
-  }
-
-  Future<void> loadHiddenRules() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString(kHiddenRulesKey);
+    String? data = prefs.getString('${kHiddenRulesKey}_$studentId');
+    if (data == null) {
+      // 兼容旧版全局键
+      data = prefs.getString(kHiddenRulesKey);
+      if (data != null) {
+        await prefs.setString('${kHiddenRulesKey}_$studentId', data);
+      }
+    }
     if (data != null) {
       try {
         final List<dynamic> jsonList = jsonDecode(data);
         hiddenRules = jsonList.map((e) => HiddenRule.fromJson(e)).toList();
-        notifyListeners();
       } catch (e) {
-        debugPrint("Failed to load hidden rules: $e");
+        debugPrint("Failed to parse hidden rules for $studentId: $e");
+        hiddenRules = [];
+      }
+    } else {
+      hiddenRules = [];
+    }
+    notifyListeners();
+  }
+
+  Future<void> saveHiddenRulesForUser(String studentId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final String data = jsonEncode(
+      hiddenRules.map((e) => e.toJson()).toList(),
+    );
+    await prefs.setString('${kHiddenRulesKey}_$studentId', data);
+
+    if (studentId == currentId) {
+      await prefs.setString(kHiddenRulesKey, data);
+    }
+  }
+
+  /// 仅保存自定义课程到本地，不触发小组件刷新
+  Future<void> saveCustomCourses() async {
+    await saveCustomCoursesForUser(currentId);
+  }
+
+  Future<void> loadCustomCourses() async {
+    await loadCustomCoursesForUser(currentId);
+  }
+
+  Future<void> saveHiddenRules() async {
+    await saveHiddenRulesForUser(currentId);
+  }
+
+  Future<void> loadHiddenRules() async {
+    await loadHiddenRulesForUser(currentId);
+  }
+
+  // --- 多账号管理业务逻辑 ---
+
+  Future<void> loadAllProfilesData() async {
+    final prefs = await SharedPreferences.getInstance();
+    userProfiles = prefs.getStringList('user_profiles_list') ?? [];
+
+    if (currentId.isNotEmpty && !userProfiles.contains(currentId)) {
+      userProfiles.add(currentId);
+      await prefs.setStringList('user_profiles_list', userProfiles);
+    }
+
+    loadedSchedules.clear();
+    loadedCustomCourses.clear();
+    loadedHiddenRules.clear();
+
+    for (var id in userProfiles) {
+      // 1. 加载课表
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$id.json');
+        if (await file.exists()) {
+          final jsonStr = await file.readAsString();
+          loadedSchedules[id] = ScheduleResponse.fromJson(jsonDecode(jsonStr));
+        } else if (id == currentId && scheduleData != null) {
+          loadedSchedules[id] = scheduleData!;
+        }
+      } catch (e) {
+        debugPrint("Error loading profile schedule for $id: $e");
+      }
+
+      // 2. 加载自定义行程
+      final customData = prefs.getString('${kCustomCoursesKey}_$id');
+      if (customData != null) {
+        final List<dynamic> jsonList = jsonDecode(customData);
+        loadedCustomCourses[id] = jsonList.map((e) => CustomCourse.fromJson(e)).toList();
+      } else if (id == currentId) {
+        loadedCustomCourses[id] = customCourses;
+      } else {
+        loadedCustomCourses[id] = [];
+      }
+
+      // 3. 加载隐藏课程
+      final hiddenData = prefs.getString('${kHiddenRulesKey}_$id');
+      if (hiddenData != null) {
+        final List<dynamic> jsonList = jsonDecode(hiddenData);
+        loadedHiddenRules[id] = jsonList.map((e) => HiddenRule.fromJson(e)).toList();
+      } else if (id == currentId) {
+        loadedHiddenRules[id] = hiddenRules;
+      } else {
+        loadedHiddenRules[id] = [];
       }
     }
+    notifyListeners();
+  }
+
+  Future<bool> addUserProfile(String studentId) async {
+    if (studentId.isEmpty) {
+      triggerToast("学号不能为空");
+      return false;
+    }
+    if (userProfiles.contains(studentId)) {
+      triggerToast("该学号档案已存在");
+      return false;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final url = Uri.parse(
+        "https://cqupt.ishub.top/api/curriculum/$studentId/curriculum.json",
+      );
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final body = response.body;
+        final decoded = ScheduleResponse.fromJson(jsonDecode(body));
+        if (decoded.studentId.isEmpty) {
+          triggerToast("无法解析课表数据，添加失败");
+          return false;
+        }
+
+        // 保存课表缓存
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$studentId.json');
+        await file.writeAsString(body);
+
+        // 添加到学号列表
+        userProfiles.add(studentId);
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setStringList('user_profiles_list', userProfiles);
+
+        // 初始化对应的空偏好设置
+        await loadColorMapForUser(studentId);
+        await loadCustomCoursesForUser(studentId);
+        await loadHiddenRulesForUser(studentId);
+
+        await saveColorMapForUser(studentId);
+        await saveCustomCoursesForUser(studentId);
+        await saveHiddenRulesForUser(studentId);
+
+        // 回到当前账号的内存状态
+        await loadColorMapForUser(currentId);
+        await loadCustomCoursesForUser(currentId);
+        await loadHiddenRulesForUser(currentId);
+
+        await loadAllProfilesData();
+        triggerToast("添加用户 ${decoded.studentName} 成功");
+        return true;
+      } else {
+        triggerToast("未找到该学号的课表数据");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("Error adding user profile: $e");
+      triggerToast("添加失败，请检查网络或学号");
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  Future<void> deleteUserProfile(String studentId) async {
+    if (studentId == currentId) {
+      triggerToast("无法删除当前正在使用的账号");
+      return;
+    }
+
+    userProfiles.remove(studentId);
+    checkedUserIds.remove(studentId);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('user_profiles_list', userProfiles);
+    await prefs.setStringList('checked_user_ids', checkedUserIds);
+
+    // 删除缓存文件
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/schedule_cache_$studentId.json');
+      if (await file.exists()) {
+        await file.delete();
+      }
+    } catch (e) {
+      debugPrint("Error deleting schedule cache for $studentId: $e");
+    }
+
+    // 删除首选项
+    await prefs.remove('${kCustomCoursesKey}_$studentId');
+    await prefs.remove('${kCourseColorMapKey}_$studentId');
+    await prefs.remove('${kCourseCustomColorMapKey}_$studentId');
+    await prefs.remove('${kHiddenRulesKey}_$studentId');
+
+    await loadAllProfilesData();
+    triggerToast("已删除用户档案");
+  }
+
+  Future<void> switchProfile(String studentId) async {
+    if (studentId == currentId) return;
+
+    currentId = studentId;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(kSavedIdKey, studentId);
+    await prefs.setBool('is_logged_in', true);
+
+    await loadColorMapForUser(studentId);
+    await loadCustomCoursesForUser(studentId);
+    await loadHiddenRulesForUser(studentId);
+
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/schedule_cache_$studentId.json');
+      if (await file.exists()) {
+        final jsonStr = await file.readAsString();
+        scheduleData = ScheduleResponse.fromJson(jsonDecode(jsonStr));
+      } else {
+        scheduleData = null;
+      }
+    } catch (e) {
+      debugPrint("Error switching profile schedule: $e");
+      scheduleData = null;
+    }
+
+    parseStartDate(autoJump: true);
+    notifyListeners();
+
+    if (!kIsWeb) {
+      await WidgetService.syncToWidget(this);
+    }
+
+    // 触发静默同步更新最新课表
+    await refreshData(silent: false);
+  }
+
+  // --- 共同空闲时间业务逻辑 ---
+
+  Future<void> loadCommonFreeTimeSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    showCommonFreeTime = prefs.getBool('show_common_free_time') ?? false;
+    checkedUserIds = prefs.getStringList('checked_user_ids') ?? [];
+    notifyListeners();
+  }
+
+  Future<void> toggleCommonFreeTime(bool value) async {
+    showCommonFreeTime = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('show_common_free_time', value);
+    notifyListeners();
+  }
+
+  Future<void> toggleCheckedUser(String id, bool checked) async {
+    if (checked) {
+      if (!checkedUserIds.contains(id)) {
+        checkedUserIds.add(id);
+      }
+    } else {
+      checkedUserIds.remove(id);
+    }
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('checked_user_ids', checkedUserIds);
+    notifyListeners();
+  }
+
+  List<CourseInstance> getCoursesForUser(String id, int week) {
+    final schedule = loadedSchedules[id];
+    final customs = loadedCustomCourses[id] ?? [];
+    final hiddens = loadedHiddenRules[id] ?? [];
+
+    bool isHidden(CourseInstance course) {
+      for (var rule in hiddens) {
+        if (rule.type == 'all') {
+          if (rule.courseName == course.course) return true;
+        } else if (rule.type == 'time_slot') {
+          if (rule.courseName == course.course &&
+              rule.day == course.day &&
+              rule.periods != null &&
+              rule.periods!.isNotEmpty &&
+              course.periods.isNotEmpty &&
+              rule.periods!.first == course.periods.first) {
+            return true;
+          }
+        } else if (rule.type == 'single') {
+          if (rule.instanceId == course.id) return true;
+        }
+      }
+      return false;
+    }
+
+    final apiList = schedule?.instances.where((e) => e.week == week).toList() ?? [];
+    final customList = customs
+        .expand((e) => e.toInstances())
+        .where((e) => e.week == week)
+        .toList();
+
+    return [...apiList, ...customList].where((c) => !isHidden(c)).toList();
+  }
+
+  Set<String> getCommonFreePeriods(int week) {
+    if (!showCommonFreeTime || checkedUserIds.isEmpty) return {};
+
+    final Set<String> freeCells = {};
+
+    // 默认初始化 7 天 * 12 节课全为空闲
+    for (int day = 1; day <= 7; day++) {
+      for (int period = 1; period <= 12; period++) {
+        freeCells.add("${day}_$period");
+      }
+    }
+
+    // 从空闲集合中扣除每个被勾选用户在这一周的有课节次
+    for (var id in checkedUserIds) {
+      final courses = getCoursesForUser(id, week);
+      for (var c in courses) {
+        for (var p in c.periods) {
+          freeCells.remove("${c.day}_$p");
+        }
+      }
+    }
+
+    return freeCells;
   }
 
   bool isCourseHidden(CourseInstance course) {

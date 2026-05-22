@@ -10,6 +10,7 @@ import '../views/desk_dock_widget_view.dart';
 import '../views/hidden_courses_management_view.dart';
 import '../views/alarm_settings_view.dart';
 import '../views/live_activity_settings_view.dart';
+import '../views/user_management_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -259,6 +260,34 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                         ),
                       ]),
                       const SizedBox(height: 16),
+
+                      // 切换用户
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => UserManagementView(
+                                  viewModel: widget.viewModel,
+                                ),
+                              ),
+                            ).then((_) => setState(() {}));
+                          },
+                          icon: const Icon(Icons.switch_account_rounded),
+                          label: const Text('切换用户档案'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color.fromRGBO(0, 122, 89, 1),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
 
                       // 5. 退出登录
                       SizedBox(
