@@ -228,9 +228,8 @@ class ScheduleViewModel extends ChangeNotifier {
     await loadAllProfilesData();
     if (kIsWeb) {
       await loadWebBackgroundImage();
-    } else {
-      await loadFromCache(isInitial: true);
     }
+    await loadFromCache(isInitial: true);
     if (!kIsWeb) {
       await WidgetService.syncToWidget(this);
     }
@@ -393,9 +392,7 @@ class ScheduleViewModel extends ChangeNotifier {
       if (response.statusCode == 200) {
         final decoded = ScheduleResponse.fromJson(jsonDecode(response.body));
         scheduleData = decoded;
-        if (!kIsWeb) {
-          await _saveToCache(response.body);
-        }
+        await _writeScheduleCache(currentId, response.body);
         generateColorMap();
         parseStartDate(autoJump: false);
         if (!silent) {
@@ -416,28 +413,69 @@ class ScheduleViewModel extends ChangeNotifier {
     }
   }
 
-  Future<File> get _cacheFile async {
-    final directory = await getApplicationDocumentsDirectory();
-    return File('${directory.path}/schedule_cache_$currentId.json');
+  Future<String?> _readScheduleCache(String studentId) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString('web_schedule_cache_$studentId');
+    } else {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$studentId.json');
+        
+        // 兼容/迁移旧版没有学号后缀的缓存文件
+        if (!await file.exists() && studentId == currentId && studentId.isNotEmpty) {
+          final legacyFile = File('${directory.path}/schedule_cache.json');
+          if (await legacyFile.exists()) {
+            await legacyFile.copy(file.path);
+          }
+        }
+        
+        if (await file.exists()) {
+          return await file.readAsString();
+        }
+      } catch (e) {
+        debugPrint("Cache read error for $studentId: $e");
+      }
+      return null;
+    }
   }
 
-  Future<void> _saveToCache(String jsonStr) async {
-    final file = await _cacheFile;
-    await file.writeAsString(jsonStr);
+  Future<void> _writeScheduleCache(String studentId, String jsonStr) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('web_schedule_cache_$studentId', jsonStr);
+    } else {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$studentId.json');
+        await file.writeAsString(jsonStr);
+      } catch (e) {
+        debugPrint("Cache write error for $studentId: $e");
+      }
+    }
+  }
+
+  Future<void> _deleteScheduleCache(String studentId) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('web_schedule_cache_$studentId');
+    } else {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$studentId.json');
+        if (await file.exists()) {
+          await file.delete();
+        }
+      } catch (e) {
+        debugPrint("Error deleting schedule cache for $studentId: $e");
+      }
+    }
   }
 
   Future<void> loadFromCache({bool isInitial = false}) async {
     try {
-      final file = await _cacheFile;
-      // 兼容/迁移旧版没有学号后缀的缓存文件
-      if (!await file.exists() && currentId.isNotEmpty) {
-        final legacyFile = File('${(await getApplicationDocumentsDirectory()).path}/schedule_cache.json');
-        if (await legacyFile.exists()) {
-          await legacyFile.copy(file.path);
-        }
-      }
-      if (await file.exists()) {
-        final jsonStr = await file.readAsString();
+      final jsonStr = await _readScheduleCache(currentId);
+      if (jsonStr != null) {
         scheduleData = ScheduleResponse.fromJson(jsonDecode(jsonStr));
         generateColorMap();
         parseStartDate(autoJump: isInitial);
@@ -659,10 +697,8 @@ class ScheduleViewModel extends ChangeNotifier {
     for (var id in userProfiles) {
       // 1. 加载课表
       try {
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/schedule_cache_$id.json');
-        if (await file.exists()) {
-          final jsonStr = await file.readAsString();
+        final jsonStr = await _readScheduleCache(id);
+        if (jsonStr != null) {
           loadedSchedules[id] = ScheduleResponse.fromJson(jsonDecode(jsonStr));
         } else if (id == currentId && scheduleData != null) {
           loadedSchedules[id] = scheduleData!;
@@ -724,9 +760,7 @@ class ScheduleViewModel extends ChangeNotifier {
         }
 
         // 保存课表缓存
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File('${directory.path}/schedule_cache_$studentId.json');
-        await file.writeAsString(body);
+        await _writeScheduleCache(studentId, body);
 
         // 添加到学号列表
         userProfiles.add(studentId);
@@ -777,15 +811,7 @@ class ScheduleViewModel extends ChangeNotifier {
     await prefs.setStringList('checked_user_ids', checkedUserIds);
 
     // 删除缓存文件
-    try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/schedule_cache_$studentId.json');
-      if (await file.exists()) {
-        await file.delete();
-      }
-    } catch (e) {
-      debugPrint("Error deleting schedule cache for $studentId: $e");
-    }
+    await _deleteScheduleCache(studentId);
 
     // 删除首选项
     await prefs.remove('${kCustomCoursesKey}_$studentId');
@@ -810,10 +836,8 @@ class ScheduleViewModel extends ChangeNotifier {
     await loadHiddenRulesForUser(studentId);
 
     try {
-      final directory = await getApplicationDocumentsDirectory();
-      final file = File('${directory.path}/schedule_cache_$studentId.json');
-      if (await file.exists()) {
-        final jsonStr = await file.readAsString();
+      final jsonStr = await _readScheduleCache(studentId);
+      if (jsonStr != null) {
         scheduleData = ScheduleResponse.fromJson(jsonDecode(jsonStr));
       } else {
         scheduleData = null;

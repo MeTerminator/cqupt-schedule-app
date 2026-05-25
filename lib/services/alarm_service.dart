@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/schedule_model.dart';
@@ -420,7 +421,7 @@ class AlarmService {
     required DateTime endTime,
     required int leadMinutes,
   }) async {
-    if (!Platform.isIOS) return false;
+    if (kIsWeb || !Platform.isIOS) return false;
     try {
       final bool? result = await _channel.invokeMethod<bool>('startCourseLiveActivity', {
         'courseId': courseId,
@@ -439,7 +440,7 @@ class AlarmService {
 
   /// 停止课程实时活动
   static Future<bool> stopCourseLiveActivity() async {
-    if (!Platform.isIOS) return false;
+    if (kIsWeb || !Platform.isIOS) return false;
     try {
       final bool? result = await _channel.invokeMethod<bool>('stopCourseLiveActivity');
       return result ?? false;
@@ -451,7 +452,7 @@ class AlarmService {
 
   /// 核心调度引擎：同步并刷新今日课程实时活动状态
   static Future<void> syncCourseLiveActivity(ScheduleViewModel vm) async {
-    if (!Platform.isIOS) return;
+    if (kIsWeb || !Platform.isIOS) return;
 
     try {
       final beforeEnabled = await getCourseLiveActivityBeforeClassEnabled();

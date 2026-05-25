@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/alarm_service.dart';
 import '../view_models/schedule_view_model.dart';
-import 'live_activity_settings_view.dart';
 
 class AlarmSettingsView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -108,7 +107,7 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
     final tomorrow = today.add(const Duration(days: 1));
     final alarmDate = DateTime(dt.year, dt.month, dt.day);
     
-    String dayLabel = '${month}月${day}日';
+    String dayLabel = '$month月$day日';
     if (alarmDate == today) {
       dayLabel = '今天';
     } else if (alarmDate == tomorrow) {

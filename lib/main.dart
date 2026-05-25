@@ -139,7 +139,7 @@ class _MyAppState extends State<MyApp> {
             builder: (context, viewModel, _) {
               return Stack(
                 children: [
-                  if (child != null) child,
+                  ?child,
                   IgnorePointer(
                     ignoring: true,
                     child: AnimatedOpacity(

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
@@ -285,7 +286,7 @@ class CourseDetailView extends StatelessWidget {
           ),
           child: Column(
             children: [
-              if (Platform.isIOS) ...[
+              if (!kIsWeb && Platform.isIOS) ...[
                 ListTile(
                   leading: const Icon(Icons.alarm, color: Colors.blue),
                   title: const Text('设置此节闹钟', style: TextStyle(fontWeight: FontWeight.w500)),

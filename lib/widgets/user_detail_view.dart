@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import '../view_models/schedule_view_model.dart';
 import 'calendar_export_view.dart';
@@ -190,7 +191,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       const SizedBox(height: 16),
 
                       // 闹钟与实时活动
-                      if (Platform.isIOS) ...[
+                      if (!kIsWeb && Platform.isIOS) ...[
                         _buildSection(context, '闹钟与实时活动', [
                           ListTile(
                             leading: const Icon(Icons.alarm),

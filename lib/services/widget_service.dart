@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:convert';
 import 'dart:io';
 import 'alarm_service.dart';
@@ -28,6 +29,7 @@ class WidgetService {
   static Completer<void>? _pendingCompleter;
 
   static Future<void> syncToWidget(ScheduleViewModel vm) async {
+    if (kIsWeb) return;
     if (vm.scheduleData == null) return;
 
     if (Platform.isIOS) {
@@ -112,6 +114,7 @@ class WidgetService {
 
   /// 清空 Widget 和 Watch 的课表数据（退出登录时调用）
   static Future<void> clearWidgetData() async {
+    if (kIsWeb) return;
     try {
       if (Platform.isIOS) {
         await HomeWidget.setAppGroupId(appGroupId);

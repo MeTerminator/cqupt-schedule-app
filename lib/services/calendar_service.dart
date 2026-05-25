@@ -1,4 +1,5 @@
 import 'package:device_calendar/device_calendar.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart' show Color, debugPrint;
 import 'package:timezone/timezone.dart' as tz;
@@ -49,7 +50,7 @@ class CalendarService {
     var result = await _deviceCalendarPlugin.createCalendar(
       finalName,
       calendarColor: const Color(0xFF3498DB),
-      localAccountName: Platform.isIOS ? null : _targetAccountName,
+      localAccountName: (kIsWeb || Platform.isIOS) ? null : _targetAccountName,
     );
 
     if (result.isSuccess && result.data != null) {
