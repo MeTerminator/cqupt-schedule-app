@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Primary SEO Meta Tags -->
+    <title>重邮课表 | 极致颜值的智能课表 App - 官方网站</title>
+    <meta name="description" content="重邮课表（CQUPT Schedule）是一款专为重庆邮电大学学子打造的高颜值、功能强大的智能课表App。支持毛玻璃自定义背景、多尺寸桌面与锁屏小组件、Apple Watch独立应用、日历同步及iOS快捷指令，助你轻松管理大学日程。">
+    <meta name="keywords" content="重邮课表, CQUPT Schedule, 重庆邮电大学, 重邮, 课表App, 桌面小组件, Apple Watch课表, 快捷指令, 课程管理">
+    <meta name="author" content="MeTerminator">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="重邮课表 | 极致颜值的智能课表 App">
+    <meta property="og:description" content="专为重庆邮电大学学子打造的高颜值智能课表。支持毛玻璃背景、小组件、Apple Watch，抬手即看课表。">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Dynamic Background Glow Orbs -->
+    <div class="bg-glow-container">
+        <div class="glow-orb orb-1"></div>
+        <div class="glow-orb orb-2"></div>
+        <div class="glow-orb orb-3"></div>
+    </div>
+
+    <!-- HEADER / NAVIGATION -->
+    <header class="header" id="header">
+        <div class="container nav-container">
+            <a href="#home" class="logo-link" id="nav-logo">
+                <div class="logo-icon">
+                    <img src="assets/images/logo.png" alt="重邮课表 Logo">
+                </div>
+                <span class="logo-text">重邮课表</span>
+            </a>
+            
+            <div class="nav-actions">
+                <a href="/curriculum/" class="btn btn-primary btn-sm" id="nav-download-btn">网页版课表</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION -->
+    <section class="hero-section" id="home">
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-community">
+                    <span class="community-text">💬 反馈交流QQ群：<strong>1051832310</strong></span>
+                    <button class="btn btn-text-copy" id="btn-copy-qq" data-clipboard="1051832310">
+                        <span>复制群号</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-svg">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                    </button>
+                    <span class="copy-toast" id="copy-toast">复制成功！</span>
+                </div>
+                <h1 class="hero-title">
+                    极致颜值<br>
+                    <span class="text-gradient">智能课表 App</span>
+                </h1>
+                <p class="hero-subtitle">
+                    重邮课表是专为重庆邮电大学本科生打造的智能课表与校园行程助手。仅需学号登录，即可快速同步你的个人课表、考试安排与调休日程，让你的重邮校园生活更高效、更便捷。
+                </p>
+                
+                <!-- Quick Download Buttons -->
+                <div class="hero-download-panel" id="download">
+                    <div class="download-buttons">
+                        <a href="/download.php?platform=android" class="btn btn-glow" id="btn-apk-dl">
+                            <svg class="btn-icon" viewBox="0 0 50 50" fill="currentColor">
+                                <path d="M 16.28125 0.03125 C 16.152344 0.0546875 16.019531 0.078125 15.90625 0.15625 C 15.449219 0.464844 15.347656 1.105469 15.65625 1.5625 L 17.8125 4.78125 C 14.480469 6.546875 11.996094 9.480469 11.1875 13 L 38.8125 13 C 38.003906 9.480469 35.519531 6.546875 32.1875 4.78125 L 34.34375 1.5625 C 34.652344 1.105469 34.550781 0.464844 34.09375 0.15625 C 33.632813 -0.152344 32.996094 -0.0195313 32.6875 0.4375 L 30.3125 3.9375 C 28.664063 3.335938 26.875 3 25 3 C 23.125 3 21.335938 3.335938 19.6875 3.9375 L 17.3125 0.4375 C 17.082031 0.09375 16.664063 -0.0429688 16.28125 0.03125 Z M 19.5 8 C 20.328125 8 21 8.671875 21 9.5 C 21 10.332031 20.328125 11 19.5 11 C 18.667969 11 18 10.332031 18 9.5 C 18 8.671875 18.667969 8 19.5 8 Z M 30.5 8 C 31.332031 8 32 8.671875 32 9.5 C 32 10.332031 31.332031 11 30.5 11 C 29.671875 11 29 10.332031 29 9.5 C 29 8.671875 29.671875 8 30.5 8 Z M 8 15 C 6.34375 15 5 16.34375 5 18 L 5 32 C 5 33.65625 6.34375 35 8 35 C 8.351563 35 8.6875 34.925781 9 34.8125 L 9 15.1875 C 8.6875 15.074219 8.351563 15 8 15 Z M 11 15 L 11 37 C 11 38.652344 12.347656 40 14 40 L 36 40 C 37.652344 40 39 38.652344 39 37 L 39 15 Z M 42 15 C 41.648438 15 41.3125 15.074219 41 15.1875 L 41 34.8125 C 41.3125 34.921875 41.648438 35 42 35 C 43.65625 35 45 33.65625 45 32 L 45 18 C 45 16.34375 43.65625 15 42 15 Z M 15 42 L 15 46 C 15 48.207031 16.792969 50 19 50 C 21.207031 50 23 48.207031 23 46 L 23 42 Z M 27 42 L 27 46 C 27 48.207031 28.792969 50 31 50 C 33.207031 50 35 48.207031 35 46 L 35 42 Z"/>
+                            </svg>
+                            <div>
+                                <span class="btn-label">下载 Android 版</span>
+                                <span class="btn-subtext">下载 APK 安装包</span>
+                            </div>
+                        </a>
+                        
+                        <a href="https://apps.apple.com/cn/app/cqupt-schedule/id6759787488" target="_blank" rel="noopener noreferrer" class="btn btn-outline" id="btn-tf-dl">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 22c-1.34.05-1.77-.77-3.29-.77-1.53 0-2 .74-3.27.79-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.2.67-2.92 1.49-.6.69-1.12 1.84-.98 2.95 1.11.08 2.24-.57 2.91-1.38z"/>
+                            </svg>
+                            <div>
+                                <span class="btn-label">下载 iOS 版</span>
+                                <span class="btn-subtext">从 App Store 下载</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <div class="download-qr-box">
+                        <div class="qr-container">
+                            <img src="assets/images/qqgroup.png" alt="QQ群二维码" class="qr-img">
+                        </div>
+                        <div class="qr-info">
+                            <span class="qr-title">扫码加入QQ群</span>
+                            <span class="qr-desc">获取最新测试包 & 动态</span>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+
+            <!-- Hero Phone Mockup -->
+            <div class="hero-preview">
+                <div class="phone-frame-container">
+                    <div class="phone-glow"></div>
+                    <div class="phone-frame">
+                        <div class="phone-screen-wrapper">
+                            <img src="assets/images/app_schedule_default.webp" alt="重邮课表 App 主页" class="phone-screen-img" id="hero-phone-img">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FEATURES SECTION -->
+    <section class="features-section" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">主要功能特点</h2>
+                <p class="section-subtitle">极致体验，专为提升重邮学子校园效率而生</p>
+            </div>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">📅</span>
+                    <div class="feature-info">
+                        <h3>智能调停课与自动调休</h3>
+                        <p>自动合并代/停/补课数据与国家法定节假日调休日程，并在课表醒目标注，避免走错教室。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📝</span>
+                    <div class="feature-info">
+                        <h3>考试数据同步</h3>
+                        <p>自动同步更新最新的考试安排、考场具体位置与座位号，备考复习行程一目了然。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🎨</span>
+                    <div class="feature-info">
+                        <h3>界面个性化自定义</h3>
+                        <p>支持深度个性化主题设置，背景图片、字体颜色及不透明度自由定义，打造专属课表外观。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🏝️</span>
+                    <div class="feature-info">
+                        <h3>系统级深度融合</h3>
+                        <p>完美适配桌面及锁屏小组件，全面支持灵动岛与实时活动，下课进度与教室指引实时更新。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🎙️</span>
+                    <div class="feature-info">
+                        <h3>便捷指令与 Siri 联动</h3>
+                        <p>完美集成 iOS 快捷指令与 Siri 语音查询，无需手动繁琐打开应用即可一秒快速查课。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">⏰</span>
+                    <div class="feature-info">
+                        <h3>早八/早十快捷闹钟</h3>
+                        <p>智能提取课程具体开始时间，一键自动设置起床快捷闹钟，贴心护航避免上课迟到。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">👥</span>
+                    <div class="feature-info">
+                        <h3>多人无课空闲查询</h3>
+                        <p>支持同时管理多名同学的课表数据，一键对比冲突并秒找共有的无课及活动空闲时间。</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">⌚</span>
+                    <div class="feature-info">
+                        <h3>Apple Watch 抬手即看</h3>
+                        <p>精心提供独立的 Apple Watch 客户端与丰富好用的表盘小组件，抬手即可查看课程行程。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-info">
+                <div class="footer-logo">
+                    <img src="assets/images/logo.png" alt="重邮课表 Logo">
+                    <span>重邮课表</span>
+                </div>
+                <p class="footer-desc">为重邮学子打造的极致高颜值、全能型课表助理。</p>
+                <p class="copyright">© 2026 重邮课表. Made with ❤️ by <a href="https://github.com/MeTerminator" target="_blank" rel="noopener noreferrer">MeTerminator</a>.</p>
+            </div>
+            
+            <div class="footer-links-group">
+                <div class="footer-link-col">
+                    <h4>法律与隐私</h4>
+                    <ul>
+                        <li><a href="privacy/zh.html" id="privacy-zh-link">隐私政策 (中文)</a></li>
+                        <li><a href="privacy/en.html" id="privacy-en-link">Privacy Policy (EN)</a></li>
+                    </ul>
+                </div>
+                <div class="footer-link-col">
+                    <h4>开源与社区</h4>
+                    <ul>
+                        <li><a href="https://github.com/MeTerminator/cqupt-schedule-app" target="_blank" rel="noopener noreferrer" id="github-link">GitHub 仓库</a></li>
+                        <li><a href="https://github.com/MeTerminator/cqupt-schedule-app/issues" target="_blank" rel="noopener noreferrer" id="issues-link">问题反馈 (Issues)</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+</body>
+</html>
