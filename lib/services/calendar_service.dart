@@ -12,17 +12,48 @@ class CalendarService {
 
   final String _targetAccountName = '重邮课表';
 
+  bool _isIOS17OrNewer() {
+    if (kIsWeb || !Platform.isIOS) return false;
+    try {
+      final versionStr = Platform.operatingSystemVersion; // e.g. "Version 17.2"
+      final match = RegExp(r'Version\s+(\d+)').firstMatch(versionStr);
+      if (match != null) {
+        final major = int.tryParse(match.group(1) ?? '');
+        if (major != null && major >= 17) return true;
+      }
+    } catch (_) {}
+    return false;
+  }
+
   Future<bool> requestPermissions() async {
-    PermissionStatus status = await Permission.calendarFullAccess.request();
-    if (!status.isGranted) {
-      final result = await _deviceCalendarPlugin.requestPermissions();
-      return result.isSuccess && result.data == true;
+    if (kIsWeb) return false;
+
+    if (Platform.isIOS) {
+      if (_isIOS17OrNewer()) {
+        PermissionStatus status = await Permission.calendarFullAccess.request();
+        if (status.isGranted) return true;
+      } else {
+        PermissionStatus status = await Permission.calendar.request();
+        if (status.isGranted) return true;
+      }
+    } else {
+      PermissionStatus status = await Permission.calendar.request();
+      if (status.isGranted) return true;
     }
-    return status.isGranted;
+
+    // Fallback to device_calendar plugin's request
+    final result = await _deviceCalendarPlugin.requestPermissions();
+    return result.isSuccess && result.data == true;
   }
 
   Future<bool> hasPermissions() async {
-    return await Permission.calendarFullAccess.isGranted;
+    if (kIsWeb) return false;
+
+    if (Platform.isIOS && _isIOS17OrNewer()) {
+      return await Permission.calendarFullAccess.isGranted;
+    } else {
+      return await Permission.calendar.isGranted;
+    }
   }
 
   /// 获取或创建日历
