@@ -139,7 +139,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
           style: TextStyle(fontSize: 12, color: Colors.grey[500]),
         ),
         value: viewModel.icloudSyncEnabled,
-        activeColor: schoolGreen,
+        activeThumbColor: schoolGreen,
         onChanged: (bool value) async {
           HapticFeedback.mediumImpact();
           await viewModel.setICloudSyncEnabled(value);
@@ -182,7 +182,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
             dense: true,
             title: const Text('同步自定义行程', style: TextStyle(fontSize: 14)),
             value: viewModel.icloudSyncCustomCourses,
-            activeColor: schoolGreen,
+            activeThumbColor: schoolGreen,
             onChanged: (bool value) async {
               HapticFeedback.lightImpact();
               await viewModel.toggleICloudSyncOption('custom_courses', value);
@@ -193,7 +193,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
             dense: true,
             title: const Text('同步课程颜色', style: TextStyle(fontSize: 14)),
             value: viewModel.icloudSyncCourseColors,
-            activeColor: schoolGreen,
+            activeThumbColor: schoolGreen,
             onChanged: (bool value) async {
               HapticFeedback.lightImpact();
               await viewModel.toggleICloudSyncOption('course_colors', value);
@@ -204,7 +204,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
             dense: true,
             title: const Text('同步隐藏课程', style: TextStyle(fontSize: 14)),
             value: viewModel.icloudSyncHiddenCourses,
-            activeColor: schoolGreen,
+            activeThumbColor: schoolGreen,
             onChanged: (bool value) async {
               HapticFeedback.lightImpact();
               await viewModel.toggleICloudSyncOption('hidden_courses', value);
@@ -215,7 +215,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
             dense: true,
             title: const Text('同步主题设置', style: TextStyle(fontSize: 14)),
             value: viewModel.icloudSyncTheme,
-            activeColor: schoolGreen,
+            activeThumbColor: schoolGreen,
             onChanged: (bool value) async {
               HapticFeedback.lightImpact();
               await viewModel.toggleICloudSyncOption('theme', value);
@@ -226,7 +226,7 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
             dense: true,
             title: const Text('同步多用户档案', style: TextStyle(fontSize: 14)),
             value: viewModel.icloudSyncProfiles,
-            activeColor: schoolGreen,
+            activeThumbColor: schoolGreen,
             onChanged: (bool value) async {
               HapticFeedback.lightImpact();
               await viewModel.toggleICloudSyncOption('profiles', value);

@@ -13,6 +13,7 @@ import '../views/alarm_settings_view.dart';
 import '../views/live_activity_settings_view.dart';
 import '../views/user_management_view.dart';
 import '../views/icloud_settings_view.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -29,6 +30,27 @@ class UserDetailView extends StatefulWidget {
 }
 
 class _UserDetailViewViewState extends State<UserDetailView> {
+  String _versionString = '加载中...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersionInfo();
+  }
+
+  Future<void> _loadVersionInfo() async {
+    try {
+      final packageInfo = await PackageInfo.fromPlatform();
+      setState(() {
+        _versionString = '${packageInfo.version} (Build ${packageInfo.buildNumber})';
+      });
+    } catch (e) {
+      setState(() {
+        _versionString = '1.0.0';
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return DraggableScrollableSheet(
@@ -390,7 +412,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
 
   Widget _buildICloudSyncRow(BuildContext context) {
     return ListTile(
-      leading: const Icon(Icons.cloud_sync, color: Colors.blue),
+      leading: const Icon(Icons.cloud_sync),
       title: const Text('iCloud 云端同步'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () {
@@ -420,6 +442,15 @@ class _UserDetailViewViewState extends State<UserDetailView> {
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           ),
           const SizedBox(height: 12),
+          Text(
+            '版本：$_versionString',
+            style: TextStyle(
+              fontSize: 11,
+              color: Colors.grey[400],
+              fontWeight: FontWeight.w300,
+            ),
+          ),
+          const SizedBox(height: 6),
           Text(
             '© 2026 MeTerminator',
             style: TextStyle(
