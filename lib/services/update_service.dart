@@ -366,7 +366,7 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: primaryColor.withOpacity(0.1),
+                    color: primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -434,7 +434,7 @@ class _UpdateDialogWidgetState extends State<_UpdateDialogWidget> {
                   LinearProgressIndicator(
                     value: _downloadProgress > 0 ? _downloadProgress : null,
                     color: primaryColor,
-                    backgroundColor: primaryColor.withOpacity(0.1),
+                    backgroundColor: primaryColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(4),
                   ),
                   const SizedBox(height: 8),
