@@ -2,7 +2,9 @@
 
 一款为重邮学子打造的高颜值、功能强大的课表 App。基于 Flutter 开发，支持 Android & iOS 双平台。
 
-__请加入 QQ 群 1051832310，获取 TestFlight 测试资格，以下载 iOS 版本 APP。__
+__反馈 QQ 群：1051832310__
+
+__请前往 [官网](https://cqupt.ishub.top/) 获取 Android 版下载链接和 App Store 链接。__
 
 ## 🌟 核心特性
 
