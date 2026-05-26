@@ -8,7 +8,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 $updateInfo = [
     'versionCode' => 28,
-    'versionName' => '1.0.0+28',
+    'versionName' => '1.0.1+28',
     'downloadUrl' => 'https://cqupt.ishub.top/download.php?platform=android',
     'releaseNotes' => "",
     'forceUpdate' => false
