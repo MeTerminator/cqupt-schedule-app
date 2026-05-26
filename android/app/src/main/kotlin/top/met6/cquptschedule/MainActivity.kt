@@ -324,21 +324,9 @@ class MainActivity : FlutterActivity() {
         val now = System.currentTimeMillis()
         val isOngoing = now >= startTimeInMillis && now < endTimeInMillis
 
-        // Build title, text, and short critical text mimicking compact Dynamic Island
-        val contentTitle = if (isOngoing) {
-            "正在上课: $courseName"
-        } else {
-            "即将上课: $courseName"
-        }
-        
-        val contentText = "教室: $classroom | " + if (isOngoing) "课中" else "课前准备"
-        val shortCriticalText = if (isOngoing) {
-            val remainingMins = ((endTimeInMillis - now) / 60000).coerceAtLeast(0)
-            "离下课 ${remainingMins}m"
-        } else {
-            val remainingMins = ((startTimeInMillis - now) / 60000).coerceAtLeast(0)
-            "离上课 ${remainingMins}m"
-        }
+        // Build title and text for modern Android 16+ Live Updates
+        val contentTitle = courseName
+        val contentText = classroom
 
         // 3. Build RemoteViews for iOS Dynamic Island style
         val remoteViews = RemoteViews(packageName, R.layout.notification_dynamic_island)
@@ -396,16 +384,22 @@ class MainActivity : FlutterActivity() {
             Notification.Builder(this)
         }
 
+
         builder.setSmallIcon(smallIconResId)
-            .setContentTitle(courseName)     // 课程名作为主标题
-            .setContentText(classroom)       // 地点作为内容
-            .setSubText(stateText)           // 中间显示离上下课文案
+            .setContentTitle(stateText)      // 最顶部的"离上下课"说明：离下课/离上课
+            .setContentText(contentText)     // 课程地点
+            .setSubText(courseName)          // 课程名称
             .setOngoing(true)
             .setContentIntent(pendingIntent)
             .setUsesChronometer(true)
             .setShowWhen(true)
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (Build.VERSION.SDK_INT >= 36) { // Android 16 (BAKLAVA)
+            // On Android 16+, do NOT set custom RemoteViews to ensure the OS elevates the notification to a status bar capsule countdown timer natively
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                builder.setChronometerCountDown(true)
+            }
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             builder.setChronometerCountDown(true)
             builder.setCustomContentView(collapsedViews)
             builder.setCustomBigContentView(remoteViews)
@@ -421,11 +415,11 @@ class MainActivity : FlutterActivity() {
         }
 
         // Apply Android 16 Live Updates configurations using Reflection
-        configureAndroid16LiveUpdate(builder, shortCriticalText, isOngoing, startTimeInMillis, endTimeInMillis)
+        configureAndroid16LiveUpdate(builder, isOngoing, startTimeInMillis, endTimeInMillis)
 
         try {
             notificationManager.notify(LIVE_ACTIVITY_NOTIFICATION_ID, builder.build())
-            Log.d("MainActivity", "Merged Live Update Notification (ID: $LIVE_ACTIVITY_NOTIFICATION_ID) posted successfully. Ongoing: $isOngoing, ShortText: $shortCriticalText")
+            Log.d("MainActivity", "Merged Live Update Notification (ID: $LIVE_ACTIVITY_NOTIFICATION_ID) posted successfully. Ongoing: $isOngoing")
         } catch (e: Exception) {
             Log.e("MainActivity", "Failed to post Merged Live Update Notification: ${e.message}", e)
         }
@@ -444,22 +438,17 @@ class MainActivity : FlutterActivity() {
 
     private fun configureAndroid16LiveUpdate(
         builder: Notification.Builder,
-        shortText: String,
         isOngoing: Boolean,
         startTimeInMillis: Long,
         endTimeInMillis: Long
     ) {
         if (Build.VERSION.SDK_INT >= 36) { // 36 is Android 16 (BAKLAVA)
             try {
-                // 1. Call setRequestPromotedOngoing(true) to request elevation to a status bar chip Live Update
+                // 1. Call setRequestPromotedOngoing(true) to request elevation to status bar capsule chip
                 val setRequestPromotedOngoingMethod = builder.javaClass.getMethod("setRequestPromotedOngoing", Boolean::class.java)
                 setRequestPromotedOngoingMethod.invoke(builder, true)
 
-                // 2. Call setShortCriticalText(shortText) to show the time precise to the minute
-                val setShortCriticalTextMethod = builder.javaClass.getMethod("setShortCriticalText", CharSequence::class.java)
-                setShortCriticalTextMethod.invoke(builder, shortText)
-
-                // 3. Create ProgressStyle via reflection to make it a promoted Live Update
+                // 2. Create ProgressStyle via reflection to make it a promoted Live Update
                 val progressStyleClass = Class.forName("android.app.Notification\$ProgressStyle")
                 val progressStyle = progressStyleClass.getConstructor().newInstance()
 
@@ -475,11 +464,24 @@ class MainActivity : FlutterActivity() {
                 val setProgressMethod = progressStyleClass.getMethod("setProgress", Int::class.java)
                 setProgressMethod.invoke(progressStyle, progressVal)
 
+                // 3. Set the progress tracker icon (clock/book) dynamically on the progress style via reflection
+                try {
+                    val setProgressTrackerIconMethod = progressStyleClass.getMethod(
+                        "setProgressTrackerIcon", 
+                        android.graphics.drawable.Icon::class.java
+                    )
+                    val smallIconResId = if (isOngoing) R.drawable.ic_live_book else R.drawable.ic_live_clock
+                    val trackerIcon = android.graphics.drawable.Icon.createWithResource(this@MainActivity, smallIconResId)
+                    setProgressTrackerIconMethod.invoke(progressStyle, trackerIcon)
+                } catch (iconEx: Exception) {
+                    Log.e("MainActivity", "Failed to set ProgressStyle tracker icon via reflection: ${iconEx.message}")
+                }
+
                 // Set style on the builder
                 val setStyleMethod = builder.javaClass.getMethod("setStyle", Class.forName("android.app.Notification\$Style"))
                 setStyleMethod.invoke(builder, progressStyle)
                 
-                Log.d("MainActivity", "Successfully configured Android 16 Live Update via reflection with ProgressStyle. Text: $shortText, Progress: $progressVal%")
+                Log.d("MainActivity", "Successfully configured Android 16 Live Update via reflection with ProgressStyle. Progress: $progressVal%")
             } catch (e: Exception) {
                 Log.e("MainActivity", "Failed to configure Android 16 Live Update via reflection: ${e.message}", e)
             }
