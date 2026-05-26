@@ -60,12 +60,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
       _isCheckingUpdate = true;
     });
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('正在检测最新版本...'),
-        duration: Duration(milliseconds: 1500),
-      ),
-    );
+    widget.viewModel.triggerToast('正在检测最新版本...');
 
     try {
       final updateInfo = await UpdateService.checkUpdate();
@@ -76,13 +71,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
         if (updateInfo != null) {
           UpdateService.showUpdateDialog(context, updateInfo);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('当前已经是最新版本'),
-              backgroundColor: Color.fromRGBO(0, 122, 89, 1),
-              duration: Duration(seconds: 2),
-            ),
-          );
+          widget.viewModel.triggerToast('当前已经是最新版本');
         }
       }
     } catch (e) {
@@ -90,12 +79,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
         setState(() {
           _isCheckingUpdate = false;
         });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('检测更新失败: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        widget.viewModel.triggerToast('检测更新失败: $e');
       }
     }
   }
@@ -265,39 +249,53 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       const SizedBox(height: 16),
 
                       // 闹钟与实时活动
-                      if (!kIsWeb && Platform.isIOS) ...[
-                        _buildSection(context, '闹钟与实时活动', [
-                          ListTile(
-                            leading: const Icon(Icons.alarm),
-                            title: const Text('闹钟管理'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => AlarmSettingsView(
-                                    viewModel: widget.viewModel,
+                      if (!kIsWeb && (Platform.isIOS || Platform.isAndroid)) ...[
+                        _buildSection(
+                          context,
+                          Platform.isAndroid ? '实时活动' : '闹钟与实时活动',
+                          [
+                            if (Platform.isIOS) ...[
+                              ListTile(
+                                leading: const Icon(Icons.alarm),
+                                title: const Text('闹钟管理'),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AlarmSettingsView(
+                                        viewModel: widget.viewModel,
+                                      ),
+                                    ),
+                                  ).then((_) => setState(() {}));
+                                },
+                              ),
+                              Divider(
+                                height: 1,
+                                indent: 16,
+                                endIndent: 16,
+                                color: Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.white10
+                                    : Colors.black12,
+                              ),
+                            ],
+                            ListTile(
+                              leading: const Icon(Icons.layers_rounded),
+                              title: const Text('实时活动设置'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => LiveActivitySettingsView(
+                                      viewModel: widget.viewModel,
+                                    ),
                                   ),
-                                ),
-                              ).then((_) => setState(() {}));
-                            },
-                          ),
-                          ListTile(
-                            leading: const Icon(Icons.layers_rounded),
-                            title: const Text('实时活动设置'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => LiveActivitySettingsView(
-                                    viewModel: widget.viewModel,
-                                  ),
-                                ),
-                              ).then((_) => setState(() {}));
-                            },
-                          ),
-                        ]),
+                                ).then((_) => setState(() {}));
+                              },
+                            ),
+                          ],
+                        ),
                         const SizedBox(height: 16),
                       ],
 

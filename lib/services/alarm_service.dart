@@ -24,6 +24,30 @@ class AlarmService {
     }
   }
 
+  /// 检查通知权限 (Android 13+ 特有，其他版本默认返回 true)
+  static Future<bool> checkNotificationPermission() async {
+    if (kIsWeb) return true;
+    if (!Platform.isAndroid) return true;
+    try {
+      final bool? result = await _channel.invokeMethod<bool>('checkNotificationPermission');
+      return result ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  /// 请求通知权限
+  static Future<bool> requestNotificationPermission() async {
+    if (kIsWeb) return true;
+    if (!Platform.isAndroid) return true;
+    try {
+      final bool? result = await _channel.invokeMethod<bool>('requestNotificationPermission');
+      return result ?? true;
+    } catch (e) {
+      return true;
+    }
+  }
+
   /// 获取所有未来处于激活状态的闹钟
   static Future<List<Map<String, dynamic>>> getScheduledAlarms() async {
     final prefs = await SharedPreferences.getInstance();
@@ -364,10 +388,13 @@ class AlarmService {
   static const String _kCourseLiveActivityBeforeClassEnabledKey = "course_live_activity_before_class_enabled";
   static const String _kCourseLiveActivityDuringClassEnabledKey = "course_live_activity_during_class_enabled";
 
-  /// 获取是否开启课程实时活动（默认开启）
+  /// 获取是否开启课程实时活动（iOS 默认开启，Android 默认关闭）
   static Future<bool> getCourseLiveActivityEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kCourseLiveActivityEnabledKey) ?? true;
+    if (prefs.containsKey(_kCourseLiveActivityEnabledKey)) {
+      return prefs.getBool(_kCourseLiveActivityEnabledKey)!;
+    }
+    return Platform.isIOS;
   }
 
   /// 设置是否开启课程实时活动
@@ -376,10 +403,13 @@ class AlarmService {
     await prefs.setBool(_kCourseLiveActivityEnabledKey, enabled);
   }
 
-  /// 获取是否开启课前实时活动（默认开启）
+  /// 获取是否开启课前实时活动（iOS 默认开启，Android 默认关闭）
   static Future<bool> getCourseLiveActivityBeforeClassEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kCourseLiveActivityBeforeClassEnabledKey) ?? true;
+    if (prefs.containsKey(_kCourseLiveActivityBeforeClassEnabledKey)) {
+      return prefs.getBool(_kCourseLiveActivityBeforeClassEnabledKey)!;
+    }
+    return Platform.isIOS;
   }
 
   /// 设置是否开启课前实时活动
@@ -388,10 +418,13 @@ class AlarmService {
     await prefs.setBool(_kCourseLiveActivityBeforeClassEnabledKey, enabled);
   }
 
-  /// 获取是否开启课中实时活动（默认开启）
+  /// 获取是否开启课中实时活动（iOS 默认开启，Android 默认关闭）
   static Future<bool> getCourseLiveActivityDuringClassEnabled() async {
     final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_kCourseLiveActivityDuringClassEnabledKey) ?? true;
+    if (prefs.containsKey(_kCourseLiveActivityDuringClassEnabledKey)) {
+      return prefs.getBool(_kCourseLiveActivityDuringClassEnabledKey)!;
+    }
+    return Platform.isIOS;
   }
 
   /// 设置是否开启课中实时活动
@@ -421,7 +454,7 @@ class AlarmService {
     required DateTime endTime,
     required int leadMinutes,
   }) async {
-    if (kIsWeb || !Platform.isIOS) return false;
+    if (kIsWeb) return false;
     try {
       final bool? result = await _channel.invokeMethod<bool>('startCourseLiveActivity', {
         'courseId': courseId,
@@ -440,7 +473,7 @@ class AlarmService {
 
   /// 停止课程实时活动
   static Future<bool> stopCourseLiveActivity() async {
-    if (kIsWeb || !Platform.isIOS) return false;
+    if (kIsWeb) return false;
     try {
       final bool? result = await _channel.invokeMethod<bool>('stopCourseLiveActivity');
       return result ?? false;
@@ -452,7 +485,7 @@ class AlarmService {
 
   /// 核心调度引擎：同步并刷新今日课程实时活动状态
   static Future<void> syncCourseLiveActivity(ScheduleViewModel vm) async {
-    if (kIsWeb || !Platform.isIOS) return;
+    if (kIsWeb) return;
 
     try {
       final beforeEnabled = await getCourseLiveActivityBeforeClassEnabled();

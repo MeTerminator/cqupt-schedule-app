@@ -1,6 +1,5 @@
 package top.met6.cquptschedule
 
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -11,6 +10,10 @@ import android.os.Environment
 import android.provider.Settings
 import android.net.Uri
 import android.app.DownloadManager
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.widget.RemoteViews
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -60,97 +63,52 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        // 2. 闹钟设置 MethodChannel
+        // 2. 实时活动与通知权限 MethodChannel
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL_ALARM).setMethodCallHandler { call, result ->
             when (call.method) {
-                "requestPermission" -> {
-                    val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    val hasAlarmPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        alarmManager.canScheduleExactAlarms()
-                    } else {
-                        true
-                    }
-                    
+                "checkNotificationPermission" -> {
                     val hasNotificationPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                         checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
                     } else {
                         true
                     }
-                    
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !hasNotificationPermission) {
-                        requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 101)
-                        result.success(true) // 返回 true 以防止 Flutter 等待挂起
-                    } else {
-                        result.success(hasAlarmPermission)
-                    }
+                    result.success(hasNotificationPermission)
                 }
-                "scheduleAlarms" -> {
-                    val arguments = call.arguments as? List<Map<String, Any>>
-                    if (arguments == null) {
-                        result.error("INVALID_ARGUMENTS", "Arguments must be a list of maps", null)
-                        return@setMethodCallHandler
-                    }
-                    
-                    val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                    try {
-                        for (alarmDict in arguments) {
-                            val id = alarmDict["id"] as? String ?: continue
-                            val title = alarmDict["title"] as? String ?: continue
-                            val timeInMillis = (alarmDict["timeInMillis"] as? Number)?.toLong() ?: continue
-                            
-                            val intent = Intent(this, AlarmReceiver::class.java).apply {
-                                putExtra("id", id)
-                                putExtra("title", title)
-                            }
-                            
-                            val pendingIntent = PendingIntent.getBroadcast(
-                                this,
-                                id.hashCode(),
-                                intent,
-                                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-                            )
-                            
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                                if (alarmManager.canScheduleExactAlarms()) {
-                                    alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
-                                } else {
-                                    alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
-                                }
-                            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
-                            } else {
-                                alarmManager.setExact(AlarmManager.RTC_WAKEUP, timeInMillis, pendingIntent)
-                            }
-                            
-                            // 保存已设置的闹钟 ID 到本地 SharedPreferences
-                            saveScheduledId(id)
+                "requestNotificationPermission" -> {
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        val hasNotificationPermission = checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+                        if (!hasNotificationPermission) {
+                            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 102)
                         }
-                        result.success(true)
-                    } catch (e: Exception) {
-                        result.error("SCHEDULE_ERROR", e.message, null)
                     }
+                    result.success(true)
                 }
-                "cancelAlarm" -> {
-                    val id = call.arguments as? String
-                    if (id == null) {
-                        result.error("INVALID_ARGUMENTS", "Argument must be a string", null)
+                "startCourseLiveActivity" -> {
+                    val arguments = call.arguments as? Map<String, Any>
+                    if (arguments == null) {
+                        result.error("INVALID_ARGUMENTS", "Arguments must be a map", null)
                         return@setMethodCallHandler
                     }
-                    
-                    cancelAlarm(id)
+                    val courseId = arguments["courseId"] as? String ?: ""
+                    val courseName = arguments["courseName"] as? String ?: ""
+                    val classroom = arguments["classroom"] as? String ?: ""
+                    val startTimeInMillis = (arguments["startTimeInMillis"] as? Number)?.toLong() ?: 0L
+                    val endTimeInMillis = (arguments["endTimeInMillis"] as? Number)?.toLong() ?: 0L
+                    val leadMinutes = (arguments["leadMinutes"] as? Number)?.toInt() ?: 15
+
+                    startCourseLiveActivity(courseId, courseName, classroom, startTimeInMillis, endTimeInMillis, leadMinutes)
                     result.success(true)
                 }
-                "clearAllAlarms" -> {
-                    val ids = getScheduledIds()
-                    for (id in ids) {
-                        cancelAlarm(id)
-                    }
-                    clearScheduledIds()
+                "stopCourseLiveActivity" -> {
+                    stopCourseLiveActivity()
                     result.success(true)
                 }
-                "checkOSVersionSupport" -> {
-                    result.success(true)
-                }
+                // 保留极简空桩实现，确保向前兼容性
+                "requestPermission" -> result.success(true)
+                "scheduleAlarms" -> result.success(true)
+                "cancelAlarm" -> result.success(true)
+                "clearAllAlarms" -> result.success(true)
+                "checkOSVersionSupport" -> result.success(true)
                 else -> result.notImplemented()
             }
         }
@@ -323,44 +281,208 @@ class MainActivity : FlutterActivity() {
         }
     }
 
-    private fun cancelAlarm(id: String) {
-        val alarmManager = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(this, AlarmReceiver::class.java)
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            id.hashCode(),
-            intent,
-            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-        )
-        if (pendingIntent != null) {
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
+
+
+    private val LIVE_ACTIVITY_NOTIFICATION_ID = 45678
+    private val LIVE_CARD_NOTIFICATION_ID = 45679
+    private val LIVE_CHANNEL_ID = "cqupt_schedule_live_channel"
+
+    private fun startCourseLiveActivity(
+        courseId: String,
+        courseName: String,
+        classroom: String,
+        startTimeInMillis: Long,
+        endTimeInMillis: Long,
+        leadMinutes: Int
+    ) {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+
+        // 1. Create channel (Android 8.0+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channelName = "今日上课实时状态"
+            val importance = NotificationManager.IMPORTANCE_DEFAULT // Must not be IMPORTANCE_MIN to support Live Updates!
+            val channel = NotificationChannel(LIVE_CHANNEL_ID, channelName, importance).apply {
+                description = "用于在状态栏和通知栏展示今日上课实时状态及倒计时"
+                enableLights(false)
+                enableVibration(false)
+                setSound(null, null)
+            }
+            notificationManager.createNotificationChannel(channel)
         }
-        removeScheduledId(id)
+
+        // 2. Open App Intent
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            courseId.hashCode(),
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val now = System.currentTimeMillis()
+        val isOngoing = now >= startTimeInMillis && now < endTimeInMillis
+
+        // Build title, text, and short critical text mimicking compact Dynamic Island
+        val contentTitle = if (isOngoing) {
+            "正在上课: $courseName"
+        } else {
+            "即将上课: $courseName"
+        }
+        
+        val contentText = "教室: $classroom | " + if (isOngoing) "课中" else "课前准备"
+        val shortCriticalText = if (isOngoing) {
+            val remainingMins = ((endTimeInMillis - now) / 60000).coerceAtLeast(0)
+            "离下课 ${remainingMins}m"
+        } else {
+            val remainingMins = ((startTimeInMillis - now) / 60000).coerceAtLeast(0)
+            "离上课 ${remainingMins}m"
+        }
+
+        // 3. Build RemoteViews for iOS Dynamic Island style
+        val remoteViews = RemoteViews(packageName, R.layout.notification_dynamic_island)
+        remoteViews.setTextViewText(R.id.course_name_text, courseName)
+        remoteViews.setTextViewText(R.id.classroom_text, classroom)
+
+        // Collapsed layout: 左侧显示 地点 XXXX，右侧显示 离上课 / 离下课 00:00:00
+        val collapsedViews = RemoteViews(packageName, R.layout.notification_dynamic_island_collapsed)
+        collapsedViews.setTextViewText(R.id.classroom_text, "地点 $classroom")
+
+        val targetTimeInMillis = if (isOngoing) endTimeInMillis else startTimeInMillis
+        val delta = targetTimeInMillis - now
+        val baseTime = android.os.SystemClock.elapsedRealtime() + delta
+
+        // Query theme-aware colors defined in colors.xml
+        val blueColor = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getColor(R.color.live_activity_blue)
+        } else {
+            @Suppress("DEPRECATION")
+            resources.getColor(R.color.live_activity_blue)
+        }
+        val greenColor = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getColor(R.color.live_activity_green)
+        } else {
+            @Suppress("DEPRECATION")
+            resources.getColor(R.color.live_activity_green)
+        }
+
+        val accentColor = if (isOngoing) greenColor else blueColor
+        val stateText = if (isOngoing) "离下课" else "离上课"
+
+        // Setup expanded view
+        remoteViews.setTextViewText(R.id.state_label, stateText)
+        remoteViews.setTextColor(R.id.state_label, accentColor)
+        remoteViews.setTextColor(R.id.chronometer, accentColor)
+        remoteViews.setChronometer(R.id.chronometer, baseTime, null, true)
+
+        // Setup collapsed view (spacing is handled via XML layout margins)
+        collapsedViews.setTextViewText(R.id.state_label, stateText)
+        collapsedViews.setTextColor(R.id.state_label, accentColor)
+        collapsedViews.setTextColor(R.id.chronometer, accentColor)
+        collapsedViews.setChronometer(R.id.chronometer, baseTime, null, true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            remoteViews.setChronometerCountDown(R.id.chronometer, true)
+            collapsedViews.setChronometerCountDown(R.id.chronometer, true)
+        }
+
+        // 4. Build Merged Live Update Notification (LIVE_ACTIVITY_NOTIFICATION_ID)
+        val smallIconResId = if (isOngoing) R.drawable.ic_live_book else R.drawable.ic_live_clock
+        val builder = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, LIVE_CHANNEL_ID)
+        } else {
+            @Suppress("DEPRECATION")
+            Notification.Builder(this)
+        }
+
+        builder.setSmallIcon(smallIconResId)
+            .setContentTitle(courseName)     // 课程名作为主标题
+            .setContentText(classroom)       // 地点作为内容
+            .setSubText(stateText)           // 中间显示离上下课文案
+            .setOngoing(true)
+            .setContentIntent(pendingIntent)
+            .setUsesChronometer(true)
+            .setShowWhen(true)
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            builder.setChronometerCountDown(true)
+            builder.setCustomContentView(collapsedViews)
+            builder.setCustomBigContentView(remoteViews)
+        } else {
+            @Suppress("DEPRECATION")
+            builder.setContent(collapsedViews)
+        }
+
+        if (isOngoing) {
+            builder.setWhen(endTimeInMillis)
+        } else {
+            builder.setWhen(startTimeInMillis)
+        }
+
+        // Apply Android 16 Live Updates configurations using Reflection
+        configureAndroid16LiveUpdate(builder, shortCriticalText, isOngoing, startTimeInMillis, endTimeInMillis)
+
+        try {
+            notificationManager.notify(LIVE_ACTIVITY_NOTIFICATION_ID, builder.build())
+            Log.d("MainActivity", "Merged Live Update Notification (ID: $LIVE_ACTIVITY_NOTIFICATION_ID) posted successfully. Ongoing: $isOngoing, ShortText: $shortCriticalText")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to post Merged Live Update Notification: ${e.message}", e)
+        }
     }
 
-    private fun getScheduledIds(): Set<String> {
-        val prefs = getSharedPreferences("cqupt_schedule_alarms_pref", Context.MODE_PRIVATE)
-        return prefs.getStringSet("scheduled_ids", emptySet()) ?: emptySet()
-    }
-    
-    private fun saveScheduledId(id: String) {
-        val prefs = getSharedPreferences("cqupt_schedule_alarms_pref", Context.MODE_PRIVATE)
-        val current = prefs.getStringSet("scheduled_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
-        current.add(id)
-        prefs.edit().putStringSet("scheduled_ids", current).apply()
-    }
-    
-    private fun removeScheduledId(id: String) {
-        val prefs = getSharedPreferences("cqupt_schedule_alarms_pref", Context.MODE_PRIVATE)
-        val current = prefs.getStringSet("scheduled_ids", emptySet())?.toMutableSet() ?: mutableSetOf()
-        if (current.remove(id)) {
-            prefs.edit().putStringSet("scheduled_ids", current).apply()
+    private fun stopCourseLiveActivity() {
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        try {
+            notificationManager.cancel(LIVE_ACTIVITY_NOTIFICATION_ID)
+            notificationManager.cancel(LIVE_CARD_NOTIFICATION_ID)
+            Log.d("MainActivity", "Live Update notifications cancelled.")
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Failed to cancel Live Update notifications: ${e.message}", e)
         }
     }
-    
-    private fun clearScheduledIds() {
-        val prefs = getSharedPreferences("cqupt_schedule_alarms_pref", Context.MODE_PRIVATE)
-        prefs.edit().remove("scheduled_ids").apply()
+
+    private fun configureAndroid16LiveUpdate(
+        builder: Notification.Builder,
+        shortText: String,
+        isOngoing: Boolean,
+        startTimeInMillis: Long,
+        endTimeInMillis: Long
+    ) {
+        if (Build.VERSION.SDK_INT >= 36) { // 36 is Android 16 (BAKLAVA)
+            try {
+                // 1. Call setRequestPromotedOngoing(true) to request elevation to a status bar chip Live Update
+                val setRequestPromotedOngoingMethod = builder.javaClass.getMethod("setRequestPromotedOngoing", Boolean::class.java)
+                setRequestPromotedOngoingMethod.invoke(builder, true)
+
+                // 2. Call setShortCriticalText(shortText) to show the time precise to the minute
+                val setShortCriticalTextMethod = builder.javaClass.getMethod("setShortCriticalText", CharSequence::class.java)
+                setShortCriticalTextMethod.invoke(builder, shortText)
+
+                // 3. Create ProgressStyle via reflection to make it a promoted Live Update
+                val progressStyleClass = Class.forName("android.app.Notification\$ProgressStyle")
+                val progressStyle = progressStyleClass.getConstructor().newInstance()
+
+                // Calculate progress based on class time elapsed
+                val now = System.currentTimeMillis()
+                val progressVal = if (isOngoing) {
+                    val total = endTimeInMillis - startTimeInMillis
+                    if (total > 0) {
+                        ((now - startTimeInMillis) * 100 / total).toInt().coerceIn(0, 100)
+                    } else 0
+                } else 0
+
+                val setProgressMethod = progressStyleClass.getMethod("setProgress", Int::class.java)
+                setProgressMethod.invoke(progressStyle, progressVal)
+
+                // Set style on the builder
+                val setStyleMethod = builder.javaClass.getMethod("setStyle", Class.forName("android.app.Notification\$Style"))
+                setStyleMethod.invoke(builder, progressStyle)
+                
+                Log.d("MainActivity", "Successfully configured Android 16 Live Update via reflection with ProgressStyle. Text: $shortText, Progress: $progressVal%")
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Failed to configure Android 16 Live Update via reflection: ${e.message}", e)
+            }
+        }
     }
 }

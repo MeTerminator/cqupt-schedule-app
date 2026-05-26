@@ -32,9 +32,7 @@ class WidgetService {
     if (kIsWeb) return;
     if (vm.scheduleData == null) return;
 
-    if (Platform.isIOS) {
-      await AlarmService.syncCourseLiveActivity(vm);
-    }
+    await AlarmService.syncCourseLiveActivity(vm);
 
     try {
       // iOS 必须设置 AppGroupId

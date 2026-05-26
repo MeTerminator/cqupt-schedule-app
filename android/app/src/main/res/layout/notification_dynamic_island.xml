@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:padding="16dp">
+
+    <!-- Left side: Course Name (Title) & Location (Subtitle) -->
+    <LinearLayout
+        android:id="@+id/class_details"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:layout_toLeftOf="@+id/timer_container"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/course_name_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="大学物理"
+            android:textColor="@color/live_activity_text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/classroom_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text="3302"
+            android:textColor="@color/live_activity_text_secondary"
+            android:textSize="13sp" />
+
+    </LinearLayout>
+
+    <!-- Right side: Time state label + Chronometer (bottom baseline-aligned) -->
+    <LinearLayout
+        android:id="@+id/timer_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:orientation="horizontal"
+        android:baselineAligned="true">
+
+        <TextView
+            android:id="@+id/state_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="离上课"
+            android:textColor="@color/live_activity_blue"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginRight="6dp" />
+
+        <Chronometer
+            android:id="@+id/chronometer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/live_activity_blue"
+            android:textSize="26sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</RelativeLayout>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp">
+
+    <!-- Left side: Location (地点 XXXX) -->
+    <TextView
+        android:id="@+id/classroom_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_centerVertical="true"
+        android:text="地点 3302"
+        android:textColor="@color/live_activity_text_primary"
+        android:textSize="14sp"
+        android:textStyle="bold" />
+
+    <!-- Right side: State Label + Live Chronometer (baseline-aligned) -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:layout_centerVertical="true"
+        android:orientation="horizontal"
+        android:baselineAligned="true">
+
+        <TextView
+            android:id="@+id/state_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="离上课"
+            android:textColor="@color/live_activity_blue"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginRight="4dp" />
+
+        <Chronometer
+            android:id="@+id/chronometer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/live_activity_blue"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+    </LinearLayout>
+
+</RelativeLayout>

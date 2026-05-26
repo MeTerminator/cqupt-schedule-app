@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/alarm_service.dart';
@@ -42,6 +44,17 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
   }
 
   Future<void> _saveBeforeClassEnabled(bool value) async {
+    if (value && !kIsWeb && Platform.isAndroid) {
+      final hasPerm = await AlarmService.checkNotificationPermission();
+      if (!hasPerm) {
+        await AlarmService.requestNotificationPermission();
+        widget.viewModel.triggerToast("请在系统弹窗中允许通知，然后重新开启");
+        setState(() {
+          _beforeClassEnabled = false;
+        });
+        return;
+      }
+    }
     setState(() {
       _beforeClassEnabled = value;
     });
@@ -51,6 +64,17 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
   }
 
   Future<void> _saveDuringClassEnabled(bool value) async {
+    if (value && !kIsWeb && Platform.isAndroid) {
+      final hasPerm = await AlarmService.checkNotificationPermission();
+      if (!hasPerm) {
+        await AlarmService.requestNotificationPermission();
+        widget.viewModel.triggerToast("请在系统弹窗中允许通知，然后重新开启");
+        setState(() {
+          _duringClassEnabled = false;
+        });
+        return;
+      }
+    }
     setState(() {
       _duringClassEnabled = value;
     });
@@ -76,7 +100,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
     return Scaffold(
       backgroundColor: scaffoldBgColor,
       appBar: AppBar(
-        title: const Text('实时活动设置', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('实时活动与 Live Updates 设置', style: TextStyle(fontWeight: FontWeight.bold)),
         elevation: 0,
         backgroundColor: Colors.transparent,
         foregroundColor: isDark ? Colors.white : Colors.black87,
@@ -105,7 +129,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                             Icon(Icons.layers_rounded, color: Colors.blue, size: 22),
                             SizedBox(width: 8),
                             Text(
-                              '什么是课程实时活动？',
+                              '什么是实时活动与 Live Updates？',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.bold,
@@ -116,7 +140,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          '实时活动可以在锁屏界面和灵动岛上，为您提供最直观的课表倒计时。即使不打开 App，您也能随时掌握下一节课的动态。您可以分别控制“课前”与“课中”的卡片展示，实现更加个性的提醒偏好。',
+                          '本功能可在锁屏界面、灵动岛（iOS）以及状态栏胶囊和锁屏卡片（Android 16+）上，为您提供最直观的课表倒计时。即使不打开 App，您也能随时掌握下一节课的动态。您可以分别控制“课前”与“课中”的卡片展示，实现更加个性的提醒偏好。',
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.6,
@@ -130,7 +154,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
 
                   // 2. 课前实时活动设置 (Before Class Live Activity Card)
                   Text(
-                    '课前实时活动',
+                    '课前实时活动 / Live Updates',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -153,12 +177,12 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                               Icon(Icons.hourglass_top, color: Colors.teal, size: 22),
                               SizedBox(width: 12),
                               Text(
-                                '启用课前实时活动',
+                                '启用课前提醒',
                                 style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                               ),
                             ],
                           ),
-                          subtitle: const Text('在上课前显示即将上课倒计时卡片'),
+                          subtitle: const Text('在上课前显示即将上课倒计时卡片与状态栏胶囊'),
                           value: _beforeClassEnabled,
                           onChanged: _saveBeforeClassEnabled,
                           activeColor: Colors.teal,
@@ -211,7 +235,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
 
                   // 3. 课中实时活动设置 (During Class Live Activity Card)
                   Text(
-                    '课中实时活动',
+                    '课中实时活动 / Live Updates',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
@@ -232,12 +256,12 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                           Icon(Icons.timelapse_rounded, color: Colors.green, size: 22),
                           SizedBox(width: 12),
                           Text(
-                            '启用课中实时活动',
+                            '启用课中提醒',
                             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
                           ),
                         ],
                       ),
-                      subtitle: const Text('在上课时显示进度环与下课倒计时卡片'),
+                      subtitle: const Text('在上课时显示进度与下课倒计时卡片及状态栏胶囊'),
                       value: _duringClassEnabled,
                       onChanged: _saveDuringClassEnabled,
                       activeColor: Colors.green,

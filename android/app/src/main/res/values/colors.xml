@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Light Mode Color Palette for Live Activity Notifications -->
+    <color name="live_activity_text_primary">#1C1C1E</color>
+    <color name="live_activity_text_secondary">#68686E</color>
+    <color name="live_activity_blue">#0066E6</color>
+    <color name="live_activity_green">#008037</color>
+</resources>

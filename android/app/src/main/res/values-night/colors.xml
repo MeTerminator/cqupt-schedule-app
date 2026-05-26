@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark Mode Color Palette for Live Activity Notifications -->
+    <color name="live_activity_text_primary">#FFFFFF</color>
+    <color name="live_activity_text_secondary">#AEAEB2</color>
+    <color name="live_activity_blue">#40A0FF</color>
+    <color name="live_activity_green">#30D158</color>
+</resources>
