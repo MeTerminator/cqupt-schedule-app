@@ -136,10 +136,11 @@ struct UpcomingCourseWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             UpcomingCourseWidgetView(entry: entry)
-                .containerBackground(.background, for: .widget)
+                .widgetBackground(.background)
         }
         .configurationDisplayName("临近课程")
         .description("显示当前要上的课程和下一节课。")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
+

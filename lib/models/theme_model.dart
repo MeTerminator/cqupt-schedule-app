@@ -145,7 +145,7 @@ enum BackgroundType { solid, image }
 /// 工具类：主题颜色转换
 class ThemeColorUtils {
   static String colorToHex(Color color) {
-    return '#${color.value.toRadixString(16).padLeft(8, '0').substring(2)}';
+    return '#${color.toARGB32().toRadixString(16).padLeft(8, '0').substring(2)}';
   }
 
   static Color hexToColor(String hex) {

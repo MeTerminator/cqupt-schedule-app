@@ -111,7 +111,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
@@ -200,7 +200,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                           borderRadius: BorderRadius.circular(16),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
@@ -211,7 +211,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                             Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: schoolGreen.withOpacity(0.1),
+                                color: schoolGreen.withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: const Icon(Icons.people_outline_rounded, color: schoolGreen, size: 20),
@@ -283,7 +283,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                             schoolGreen,
                             Colors.blueAccent,
                             (id.hashCode % 10) / 10.0,
-                          )!.withOpacity(0.8);
+                          )!.withValues(alpha: 0.8);
 
                           return Container(
                             margin: const EdgeInsets.only(bottom: 12),
@@ -298,7 +298,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
+                                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.04),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 )
@@ -373,7 +373,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                                                     ),
                                                     decoration: BoxDecoration(
                                                       color: schoolGreen
-                                                          .withOpacity(0.1),
+                                                          .withValues(alpha: 0.1),
                                                       borderRadius:
                                                           BorderRadius.circular(6),
                                                     ),
@@ -425,7 +425,7 @@ class _UserManagementViewState extends State<UserManagementView> {
                 // 全局加载动画遮罩 (添加用户时展示)
                 if (viewModel.isLoading)
                   Container(
-                    color: Colors.black.withOpacity(0.4),
+                    color: Colors.black.withValues(alpha: 0.4),
                     child: const Center(
                       child: Card(
                         shape: CircleBorder(),

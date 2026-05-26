@@ -341,7 +341,7 @@ class _CalendarExportViewState extends State<CalendarExportView> {
                       ? []
                       : [
                           BoxShadow(
-                            color: Colors.blueAccent.withOpacity(0.3),
+                            color: Colors.blueAccent.withValues(alpha: 0.3),
                             blurRadius: 12,
                             offset: const Offset(0, 4),
                           ),
@@ -512,7 +512,7 @@ class _CalendarExportViewState extends State<CalendarExportView> {
                     label: Text(m == 0 ? '不提醒' : '$m分钟'),
                     selected: isSelected,
                     onSelected: _isLoading ? null : (_) => onSelect(m),
-                    selectedColor: Colors.blueAccent.withOpacity(0.2),
+                    selectedColor: Colors.blueAccent.withValues(alpha: 0.2),
                     labelStyle: TextStyle(
                       color: isSelected
                           ? Colors.blueAccent

@@ -187,7 +187,7 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: _currentTheme.backgroundType == BackgroundType.solid
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
@@ -218,7 +218,7 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
               padding: const EdgeInsets.symmetric(vertical: 12),
               decoration: BoxDecoration(
                 color: _currentTheme.backgroundType == BackgroundType.image
-                    ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                    ? Theme.of(context).colorScheme.primary.withValues(alpha: 0.2)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(

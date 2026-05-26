@@ -141,9 +141,9 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
+                        color: Colors.red.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: Row(
                         children: [
@@ -182,9 +182,9 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.blue.withOpacity(0.1) : Colors.blue.withOpacity(0.05),
+                      color: isDark ? Colors.blue.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -357,7 +357,7 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                           label: '$_snoozeMinutes 分钟',
                           onChanged: (val) => _saveSnoozeMinutes(val.toInt()),
                           activeColor: Colors.purple,
-                          inactiveColor: Colors.purple.withOpacity(0.2),
+                          inactiveColor: Colors.purple.withValues(alpha: 0.2),
                         ),
                       ],
                     ),
@@ -447,7 +447,7 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
                                 contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                                 leading: CircleAvatar(
                                   radius: 18,
-                                  backgroundColor: iconColor.withOpacity(0.1),
+                                  backgroundColor: iconColor.withValues(alpha: 0.1),
                                   child: Icon(icon, color: iconColor, size: 18),
                                 ),
                                 title: Text(
@@ -620,7 +620,7 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
           children: [
             CircleAvatar(
               radius: 22,
-              backgroundColor: color.withOpacity(0.1),
+              backgroundColor: color.withValues(alpha: 0.1),
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(width: 14),

@@ -52,7 +52,7 @@ class _LoginViewState extends State<LoginView> {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: schoolGreen.withOpacity(0.1),
+                  color: schoolGreen.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
@@ -132,7 +132,7 @@ class _LoginViewState extends State<LoginView> {
                     ),
                     elevation: isValidId ? 5 : 0,
                     shadowColor: isValidId
-                        ? schoolGreen.withOpacity(0.3)
+                        ? schoolGreen.withValues(alpha: 0.3)
                         : Colors.transparent,
                   ),
                   child: const Text(
@@ -160,7 +160,7 @@ class _LoginViewState extends State<LoginView> {
                               },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: schoolGreen,
-                          side: BorderSide(color: schoolGreen.withOpacity(0.5), width: 1.5),
+                          side: BorderSide(color: schoolGreen.withValues(alpha: 0.5), width: 1.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),

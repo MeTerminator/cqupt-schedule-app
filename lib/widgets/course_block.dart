@@ -56,7 +56,7 @@ class CourseBlock extends StatelessWidget {
     }
 
     // 应用主题不透明度
-    backgroundColor = backgroundColor.withOpacity(viewModel.courseBlockOpacity);
+    backgroundColor = backgroundColor.withValues(alpha: viewModel.courseBlockOpacity);
 
     // 2. 基础文字颜色逻辑：
     // 如果是考试块：文字颜色要和背景反色（白天背景黑->文字白；黑夜背景白->文字黑）
@@ -73,7 +73,7 @@ class CourseBlock extends StatelessWidget {
         : Colors.redAccent;
 
     if (shouldHighlight) {
-      backgroundColor = backgroundColor.withOpacity(0.85);
+      backgroundColor = backgroundColor.withValues(alpha: 0.85);
     }
 
     // --- 文本处理函数 ---
@@ -172,7 +172,7 @@ class CourseBlock extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 14,
-                        color: baseTextColor.withOpacity(0.8),
+                        color: baseTextColor.withValues(alpha: 0.8),
                         fontWeight: FontWeight.w500,
                         height: 1.1,
                       ),
@@ -228,7 +228,7 @@ class CourseBlock extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: color.withOpacity(0.8), width: 4),
+              border: Border.all(color: color.withValues(alpha: 0.8), width: 4),
             ),
           ),
           Container(
@@ -237,10 +237,10 @@ class CourseBlock extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  color.withOpacity(0.3),
+                  color.withValues(alpha: 0.3),
                   Colors.transparent,
                   Colors.transparent,
-                  color.withOpacity(0.1),
+                  color.withValues(alpha: 0.1),
                 ],
                 stops: const [0.0, 0.3, 0.7, 1.0],
               ),

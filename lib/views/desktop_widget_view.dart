@@ -345,7 +345,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
         width: double.infinity,
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
         ),
         child: const Text(
           "今日及明日无课",
@@ -370,7 +370,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       width: double.infinity,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -450,7 +450,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       margin: const EdgeInsets.only(top: 10),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -495,7 +495,7 @@ class _DesktopWidgetViewState extends State<DesktopWidgetView> {
       height: 12,
       width: double.infinity,
       decoration: BoxDecoration(
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.3), width: 1),
       ),
       child: FractionallySizedBox(
         alignment: Alignment.centerLeft,

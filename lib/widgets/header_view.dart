@@ -67,8 +67,8 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
                 ),
                 decoration: BoxDecoration(
                   color:
-                      widget.viewModel.headerTextColor?.withOpacity(0.1) ??
-                      Colors.orange.withOpacity(0.1),
+                      widget.viewModel.headerTextColor?.withValues(alpha: 0.1) ??
+                      Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -157,19 +157,19 @@ class HeaderView extends StatelessWidget {
     if (realWeek == 0) {
       weekStatus = "开学准备";
       statusColor = Colors.orange;
-      statusBgColor = Colors.orange.withOpacity(0.15);
+      statusBgColor = Colors.orange.withValues(alpha: 0.15);
     } else if (realWeek < 0) {
       weekStatus = "未开学";
       statusColor = Colors.grey;
-      statusBgColor = Colors.grey.withOpacity(0.15);
+      statusBgColor = Colors.grey.withValues(alpha: 0.15);
     } else if (viewModel.isCurrentWeekReal) {
       weekStatus = "本周";
       statusColor = Colors.green;
-      statusBgColor = Colors.green.withOpacity(0.15);
+      statusBgColor = Colors.green.withValues(alpha: 0.15);
     } else {
       weekStatus = "非当前周";
       statusColor = Colors.grey;
-      statusBgColor = Colors.grey.withOpacity(0.15);
+      statusBgColor = Colors.grey.withValues(alpha: 0.15);
     }
 
     final topPadding = MediaQuery.of(context).padding.top;
@@ -186,7 +186,7 @@ class HeaderView extends StatelessWidget {
       ),
       decoration: headerBgColor != null && headerBgOpacity > 0
           ? BoxDecoration(
-              color: headerBgColor.withOpacity(headerBgOpacity),
+              color: headerBgColor.withValues(alpha: headerBgOpacity),
               borderRadius: BorderRadius.circular(12),
             )
           : null,

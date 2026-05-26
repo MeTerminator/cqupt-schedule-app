@@ -132,7 +132,7 @@ class ScheduleGrid extends StatelessWidget {
                 margin: const EdgeInsets.symmetric(horizontal: 2),
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
-                  color: today ? Colors.grey.withOpacity(0.1) : null,
+                  color: today ? Colors.grey.withValues(alpha: 0.1) : null,
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Column(
@@ -179,11 +179,11 @@ class ScheduleGrid extends StatelessWidget {
         final t = timeTable[period];
         Color bgColor;
         if (period <= 4) {
-          bgColor = Colors.green.withOpacity(0.12);
+          bgColor = Colors.green.withValues(alpha: 0.12);
         } else if (period <= 8) {
-          bgColor = Colors.blue.withOpacity(0.12);
+          bgColor = Colors.blue.withValues(alpha: 0.12);
         } else {
-          bgColor = Colors.purple.withOpacity(0.12);
+          bgColor = Colors.purple.withValues(alpha: 0.12);
         }
 
         return Container(
@@ -250,7 +250,7 @@ class ScheduleGrid extends StatelessWidget {
                   top: i * hourHeight,
                   child: Container(
                     height: 0.5,
-                    color: Colors.grey.withOpacity(0.1),
+                    color: Colors.grey.withValues(alpha: 0.1),
                   ),
                 );
               }),
@@ -312,8 +312,8 @@ class ScheduleGrid extends StatelessWidget {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: isDark
-                                ? Colors.teal.withOpacity(0.8)
-                                : Colors.teal.withOpacity(0.65),
+                                ? Colors.teal.withValues(alpha: 0.8)
+                                : Colors.teal.withValues(alpha: 0.65),
                             width: 1.2,
                             style: BorderStyle.solid,
                           ),

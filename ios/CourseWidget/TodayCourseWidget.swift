@@ -144,10 +144,11 @@ struct TodayCourseWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             TodayCourseWidgetEntryView(entry: entry)
-                .containerBackground(.background, for: .widget)
+                .widgetBackground(.background)
         }
         .configurationDisplayName("今日课程")
         .description("按照时间顺序显示今天和明天的课程。")
         .supportedFamilies([.systemMedium, .systemLarge])
     }
 }
+

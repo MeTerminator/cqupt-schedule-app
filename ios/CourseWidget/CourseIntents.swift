@@ -1,6 +1,7 @@
 import AppIntents
 import Foundation
 
+@available(iOS 16.0, *)
 struct CheckCourseIntent: AppIntent {
     static var title: LocalizedStringResource = "查询课表安排"
     static var description = IntentDescription("询问 Siri 下一节课在哪里上，还有多久。")
@@ -104,6 +105,7 @@ struct CheckCourseIntent: AppIntent {
     }
 }
 
+@available(iOS 16.0, *)
 struct CourseShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
         AppShortcut(
@@ -119,3 +121,4 @@ struct CourseShortcuts: AppShortcutsProvider {
         )
     }
 }
+

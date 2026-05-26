@@ -1,6 +1,7 @@
 import SwiftUI
 import WidgetKit
 
+@available(iOS 16.0, *)
 struct LockScreenWidgetView: View {
     var entry: CourseEntry
 
@@ -68,16 +69,30 @@ struct LockScreenWidgetView: View {
 }
 
 // 锁屏组件定义
+@available(iOS 16.0, *)
 struct LockScreenWidget: Widget {
     let kind: String = "LockScreenWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             LockScreenWidgetView(entry: entry)
-                .containerBackground(.clear, for: .widget)
+                .widgetBackground(Color.clear)
         }
         .configurationDisplayName("锁屏课表")
         .description("实时显示课程进度与倒计时")
         .supportedFamilies([.accessoryRectangular])
     }
 }
+
+// 通用组件背景条件编译扩展
+extension View {
+    func widgetBackground<S: ShapeStyle>(_ style: S) -> some View {
+        #if compiler(>=5.9)
+        if #available(iOS 17.0, *) {
+            return self.containerBackground(style, for: .widget)
+        }
+        #endif
+        return self.background(style)
+    }
+}
+

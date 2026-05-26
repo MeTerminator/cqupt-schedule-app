@@ -58,7 +58,7 @@ class _HiddenCoursesManagementViewState extends State<HiddenCoursesManagementVie
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                    color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.05),
                     blurRadius: 20,
                     offset: const Offset(0, 10),
                   ),
@@ -120,18 +120,18 @@ class _HiddenCoursesManagementViewState extends State<HiddenCoursesManagementVie
 
     switch (rule.type) {
       case 'all':
-        tagBgColor = Colors.purple.withOpacity(0.12);
+        tagBgColor = Colors.purple.withValues(alpha: 0.12);
         tagTextColor = Colors.purpleAccent;
         tagLabel = '全部隐藏';
         break;
       case 'time_slot':
-        tagBgColor = Colors.orange.withOpacity(0.12);
+        tagBgColor = Colors.orange.withValues(alpha: 0.12);
         tagTextColor = Colors.orangeAccent;
         tagLabel = '特定时段';
         break;
       case 'single':
       default:
-        tagBgColor = Colors.blue.withOpacity(0.12);
+        tagBgColor = Colors.blue.withValues(alpha: 0.12);
         tagTextColor = Colors.blueAccent;
         tagLabel = '单节隐藏';
         break;
@@ -144,7 +144,7 @@ class _HiddenCoursesManagementViewState extends State<HiddenCoursesManagementVie
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),

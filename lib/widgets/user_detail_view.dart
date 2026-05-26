@@ -14,6 +14,7 @@ import '../views/live_activity_settings_view.dart';
 import '../views/user_management_view.dart';
 import '../views/icloud_settings_view.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../services/update_service.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -48,6 +49,54 @@ class _UserDetailViewViewState extends State<UserDetailView> {
       setState(() {
         _versionString = '1.0.0';
       });
+    }
+  }
+
+  bool _isCheckingUpdate = false;
+
+  Future<void> _checkUpdateManual() async {
+    if (_isCheckingUpdate) return;
+    setState(() {
+      _isCheckingUpdate = true;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('正在检测最新版本...'),
+        duration: Duration(milliseconds: 1500),
+      ),
+    );
+
+    try {
+      final updateInfo = await UpdateService.checkUpdate();
+      if (mounted) {
+        setState(() {
+          _isCheckingUpdate = false;
+        });
+        if (updateInfo != null) {
+          UpdateService.showUpdateDialog(context, updateInfo);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('当前已经是最新版本'),
+              backgroundColor: Color.fromRGBO(0, 122, 89, 1),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCheckingUpdate = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('检测更新失败: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -442,6 +491,42 @@ class _UserDetailViewViewState extends State<UserDetailView> {
             style: TextStyle(fontSize: 12, color: Colors.grey[500]),
           ),
           const SizedBox(height: 12),
+          if (!kIsWeb && Platform.isAndroid) ...[
+            TextButton.icon(
+              onPressed: _checkUpdateManual,
+              icon: _isCheckingUpdate
+                  ? const SizedBox(
+                      width: 12,
+                      height: 12,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color.fromRGBO(0, 122, 89, 1),
+                        ),
+                      ),
+                    )
+                  : const Icon(
+                      Icons.system_update_rounded,
+                      size: 14,
+                      color: Color.fromRGBO(0, 122, 89, 1),
+                    ),
+              label: const Text(
+                '检查更新',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color.fromRGBO(0, 122, 89, 1),
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
           Text(
             '版本：$_versionString',
             style: TextStyle(

@@ -14,6 +14,7 @@ import 'widgets/toast_view.dart';
 import 'models/theme_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/widget_service.dart';
+import 'services/update_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -54,6 +55,24 @@ class _MyAppState extends State<MyApp> {
 
     if (_isLoggedIn && _savedId != null) {
       _viewModel.startup(_savedId!);
+    }
+
+    // Trigger background silent update check on Android
+    if (!kIsWeb && Platform.isAndroid) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _checkUpdateSilent();
+      });
+    }
+  }
+
+  Future<void> _checkUpdateSilent() async {
+    try {
+      final updateInfo = await UpdateService.checkUpdate();
+      if (updateInfo != null && mounted) {
+        UpdateService.showUpdateDialog(context, updateInfo);
+      }
+    } catch (e) {
+      debugPrint('Silent update check error: $e');
     }
   }
 

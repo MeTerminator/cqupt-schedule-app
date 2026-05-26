@@ -107,7 +107,7 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
 
     if (_customColor != null) {
       customColorHex =
-          '#${_customColor!.value.toRadixString(16).padLeft(8, '0').toUpperCase().substring(2)}';
+          '#${_customColor!.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase().substring(2)}';
     }
 
     final course = CustomCourse(
@@ -559,11 +559,11 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _customColor!.withOpacity(0.1),
+                  color: _customColor!.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '#${_customColor!.value.toRadixString(16).padLeft(8, '0').toUpperCase().substring(2)}',
+                  '#${_customColor!.toARGB32().toRadixString(16).padLeft(8, '0').toUpperCase().substring(2)}',
                   style: TextStyle(
                     fontSize: 12,
                     color: _customColor,

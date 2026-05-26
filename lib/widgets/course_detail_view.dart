@@ -137,7 +137,7 @@ class CourseDetailView extends StatelessWidget {
         width: 36,
         height: 5,
         decoration: BoxDecoration(
-          color: Colors.grey.withOpacity(0.3),
+          color: Colors.grey.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(2.5),
         ),
       ),
@@ -162,7 +162,7 @@ class CourseDetailView extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             icon: CircleAvatar(
               radius: 14,
-              backgroundColor: Colors.grey.withOpacity(0.1),
+              backgroundColor: Colors.grey.withValues(alpha: 0.1),
               child: const Icon(Icons.close, size: 18, color: Colors.grey),
             ),
           ),
@@ -341,7 +341,7 @@ class CourseDetailView extends StatelessWidget {
                 width: 36,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),
@@ -447,7 +447,7 @@ class CourseDetailView extends StatelessWidget {
           children: [
             CircleAvatar(
               radius: 20,
-              backgroundColor: Colors.orange.withOpacity(0.1),
+              backgroundColor: Colors.orange.withValues(alpha: 0.1),
               child: Icon(icon, color: Colors.orange, size: 20),
             ),
             const SizedBox(width: 16),
@@ -516,7 +516,7 @@ class CourseDetailView extends StatelessWidget {
                 width: 36,
                 height: 5,
                 decoration: BoxDecoration(
-                  color: Colors.grey.withOpacity(0.3),
+                  color: Colors.grey.withValues(alpha: 0.3),
                   borderRadius: BorderRadius.circular(2.5),
                 ),
               ),

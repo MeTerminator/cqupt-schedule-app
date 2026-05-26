@@ -93,9 +93,9 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? Colors.blue.withOpacity(0.1) : Colors.blue.withOpacity(0.05),
+                      color: isDark ? Colors.blue.withValues(alpha: 0.1) : Colors.blue.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.blue.withOpacity(0.2)),
+                      border: Border.all(color: Colors.blue.withValues(alpha: 0.2)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -195,7 +195,7 @@ class _LiveActivitySettingsViewState extends State<LiveActivitySettingsView> {
                             divisions: 11,
                             label: '$_leadMinutes 分钟',
                             activeColor: Colors.teal,
-                            inactiveColor: Colors.teal.withOpacity(0.2),
+                            inactiveColor: Colors.teal.withValues(alpha: 0.2),
                             onChanged: (val) {
                               _saveLeadMinutes(val.toInt());
                             },

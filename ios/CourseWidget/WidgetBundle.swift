@@ -439,7 +439,9 @@ struct CquptScheduleWidgetBundle: WidgetBundle {
     var widgets: some Widget {
         UpcomingCourseWidget()
         TodayCourseWidget()
-        LockScreenWidget()
+        if #available(iOS 16.0, *) {
+            LockScreenWidget()
+        }
         if #available(iOS 26.0, *) {
             AlarmLiveActivity()
             CourseLiveActivity()
