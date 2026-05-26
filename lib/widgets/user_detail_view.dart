@@ -12,6 +12,7 @@ import '../views/hidden_courses_management_view.dart';
 import '../views/alarm_settings_view.dart';
 import '../views/live_activity_settings_view.dart';
 import '../views/user_management_view.dart';
+import '../views/icloud_settings_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -187,6 +188,8 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       // 4. 系统同步
                       _buildSection(context, '系统同步', [
                         _buildSyncCalendarRow(context),
+                        if (!kIsWeb && (Platform.isIOS || Platform.isMacOS))
+                          _buildICloudSyncRow(context),
                       ]),
                       const SizedBox(height: 16),
 
@@ -382,6 +385,24 @@ class _UserDetailViewViewState extends State<UserDetailView> {
       title: const Text('导出到系统日历'),
       trailing: const Icon(Icons.chevron_right),
       onTap: () => _showCalendarSyncSheet(context),
+    );
+  }
+
+  Widget _buildICloudSyncRow(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.cloud_sync, color: Colors.blue),
+      title: const Text('iCloud 云端同步'),
+      trailing: const Icon(Icons.chevron_right),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ICloudSettingsView(
+              viewModel: widget.viewModel,
+            ),
+          ),
+        ).then((_) => setState(() {}));
+      },
     );
   }
 

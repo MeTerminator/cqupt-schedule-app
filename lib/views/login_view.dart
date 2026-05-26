@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'dart:io';
+import '../view_models/schedule_view_model.dart';
 
 class LoginView extends StatefulWidget {
   final Function(String) onLogin;
@@ -137,6 +141,49 @@ class _LoginViewState extends State<LoginView> {
                   ),
                 ),
               ),
+              if (!kIsWeb && (Platform.isIOS || Platform.isMacOS)) ...[
+                const SizedBox(height: 20),
+                Consumer<ScheduleViewModel>(
+                  builder: (context, viewModel, _) {
+                    return SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: OutlinedButton.icon(
+                        onPressed: viewModel.isLoading
+                            ? null
+                            : () async {
+                                HapticFeedback.mediumImpact();
+                                final success = await viewModel.restoreEverythingFromCloud();
+                                if (success && viewModel.currentId.isNotEmpty) {
+                                  widget.onLogin(viewModel.currentId);
+                                }
+                              },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: schoolGreen,
+                          side: BorderSide(color: schoolGreen.withOpacity(0.5), width: 1.5),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                        ),
+                        icon: viewModel.isLoading
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Color.fromRGBO(0, 122, 89, 1)),
+                                ),
+                              )
+                            : Icon(Icons.cloud_download_rounded, color: schoolGreen),
+                        label: Text(
+                          viewModel.isLoading ? '正在同步数据...' : '从 iCloud 同步并恢复数据',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
             ],
           ),
         ),

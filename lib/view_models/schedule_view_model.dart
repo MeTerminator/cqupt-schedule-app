@@ -11,6 +11,7 @@ import '../models/schedule_model.dart';
 import '../models/theme_model.dart';
 import '../models/hidden_rule_model.dart';
 import '../services/widget_service.dart';
+import '../services/icloud_service.dart';
 
 class ScheduleViewModel extends ChangeNotifier {
   ScheduleResponse? scheduleData;
@@ -42,6 +43,21 @@ class ScheduleViewModel extends ChangeNotifier {
   // 标志位：是否需要动画跳转到指定周
   bool shouldAnimateToWeek = false;
 
+  // --- iCloud 同步配置与状态 ---
+  bool _icloudSyncEnabled = false;
+  bool _icloudSyncCustomCourses = true;
+  bool _icloudSyncCourseColors = true;
+  bool _icloudSyncHiddenCourses = true;
+  bool _icloudSyncTheme = true;
+  bool _icloudSyncProfiles = true;
+
+  bool get icloudSyncEnabled => _icloudSyncEnabled;
+  bool get icloudSyncCustomCourses => _icloudSyncCustomCourses;
+  bool get icloudSyncCourseColors => _icloudSyncCourseColors;
+  bool get icloudSyncHiddenCourses => _icloudSyncHiddenCourses;
+  bool get icloudSyncTheme => _icloudSyncTheme;
+  bool get icloudSyncProfiles => _icloudSyncProfiles;
+
   static const String kCustomCoursesKey = "cloud_custom_courses";
   static const String kSavedIdKey = "saved_id";
   static const String kCourseColorMapKey = "course_color_map";
@@ -61,6 +77,7 @@ class ScheduleViewModel extends ChangeNotifier {
     loadThemeSettings();
     loadHiddenRules();
     loadCommonFreeTimeSettings(); // 加载共同空闲时间设置
+    _loadICloudSyncSettings(); // 加载 iCloud 同步设置
   }
 
   @override
@@ -333,6 +350,10 @@ class ScheduleViewModel extends ChangeNotifier {
       await prefs.setString(kCourseColorMapKey, jsonEncode(courseColorMap));
       await prefs.setString(kCourseCustomColorMapKey, jsonEncode(courseCustomColorMap));
     }
+    if (_icloudSyncEnabled && _icloudSyncCourseColors) {
+      await ICloudService.setString('${kCourseColorMapKey}_$studentId', jsonEncode(courseColorMap));
+      await ICloudService.setString('${kCourseCustomColorMapKey}_$studentId', jsonEncode(courseCustomColorMap));
+    }
   }
 
   Future<void> _saveColorMap() async {
@@ -452,6 +473,9 @@ class ScheduleViewModel extends ChangeNotifier {
       } catch (e) {
         debugPrint("Cache write error for $studentId: $e");
       }
+    }
+    if (_icloudSyncEnabled && _icloudSyncProfiles) {
+      await ICloudService.setString('schedule_cache_$studentId', jsonStr);
     }
   }
 
@@ -624,6 +648,9 @@ class ScheduleViewModel extends ChangeNotifier {
     if (studentId == currentId) {
       await prefs.setString(kCustomCoursesKey, data);
     }
+    if (_icloudSyncEnabled && _icloudSyncCustomCourses) {
+      await ICloudService.setString('${kCustomCoursesKey}_$studentId', data);
+    }
   }
 
   Future<void> loadHiddenRulesForUser(String studentId) async {
@@ -659,6 +686,9 @@ class ScheduleViewModel extends ChangeNotifier {
 
     if (studentId == currentId) {
       await prefs.setString(kHiddenRulesKey, data);
+    }
+    if (_icloudSyncEnabled && _icloudSyncHiddenCourses) {
+      await ICloudService.setString('${kHiddenRulesKey}_$studentId', data);
     }
   }
 
@@ -766,6 +796,9 @@ class ScheduleViewModel extends ChangeNotifier {
         userProfiles.add(studentId);
         final prefs = await SharedPreferences.getInstance();
         await prefs.setStringList('user_profiles_list', userProfiles);
+        if (_icloudSyncEnabled && _icloudSyncProfiles) {
+          await ICloudService.setString('user_profiles_list', jsonEncode(userProfiles));
+        }
 
         // 初始化对应的空偏好设置
         await loadColorMapForUser(studentId);
@@ -818,6 +851,15 @@ class ScheduleViewModel extends ChangeNotifier {
     await prefs.remove('${kCourseColorMapKey}_$studentId');
     await prefs.remove('${kCourseCustomColorMapKey}_$studentId');
     await prefs.remove('${kHiddenRulesKey}_$studentId');
+
+    if (_icloudSyncEnabled && _icloudSyncProfiles) {
+      await ICloudService.setString('user_profiles_list', jsonEncode(userProfiles));
+      await ICloudService.remove('schedule_cache_$studentId');
+      await ICloudService.remove('${kCustomCoursesKey}_$studentId');
+      await ICloudService.remove('${kCourseColorMapKey}_$studentId');
+      await ICloudService.remove('${kCourseCustomColorMapKey}_$studentId');
+      await ICloudService.remove('${kHiddenRulesKey}_$studentId');
+    }
 
     await loadAllProfilesData();
     triggerToast("已删除用户档案");
@@ -1054,6 +1096,9 @@ class ScheduleViewModel extends ChangeNotifier {
     final String data = jsonEncode(theme.toJson());
     await prefs.setString(kThemeSettingsKey, data);
     notifyListeners();
+    if (_icloudSyncEnabled && _icloudSyncTheme) {
+      await ICloudService.setString(kThemeSettingsKey, data);
+    }
   }
 
   Future<void> loadThemeSettings() async {
@@ -1161,6 +1206,408 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   double get headerBackgroundOpacity => currentTheme.headerBackgroundOpacity;
+
+  // --- iCloud 同步业务方法 ---
+  Future<void> _loadICloudSyncSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    _icloudSyncEnabled = prefs.getBool('icloud_sync_enabled') ?? false;
+    _icloudSyncCustomCourses = prefs.getBool('icloud_sync_custom_courses') ?? true;
+    _icloudSyncCourseColors = prefs.getBool('icloud_sync_course_colors') ?? true;
+    _icloudSyncHiddenCourses = prefs.getBool('icloud_sync_hidden_courses') ?? true;
+    _icloudSyncTheme = prefs.getBool('icloud_sync_theme') ?? true;
+    _icloudSyncProfiles = prefs.getBool('icloud_sync_profiles') ?? true;
+    notifyListeners();
+
+    if (_icloudSyncEnabled) {
+      await pullFromICloud();
+    }
+  }
+
+  Future<void> setICloudSyncEnabled(bool enabled) async {
+    _icloudSyncEnabled = enabled;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('icloud_sync_enabled', enabled);
+    notifyListeners();
+
+    if (enabled) {
+      await pushAllToICloud();
+      await pullFromICloud();
+      triggerToast("iCloud同步已开启");
+    } else {
+      triggerToast("iCloud同步已关闭");
+    }
+  }
+
+  Future<void> toggleICloudSyncOption(String option, bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    switch (option) {
+      case 'custom_courses':
+        _icloudSyncCustomCourses = value;
+        await prefs.setBool('icloud_sync_custom_courses', value);
+        if (_icloudSyncEnabled && value) {
+          for (var id in userProfiles) {
+            final data = prefs.getString('${kCustomCoursesKey}_$id');
+            if (data != null) {
+              await ICloudService.setString('${kCustomCoursesKey}_$id', data);
+            }
+          }
+        }
+        break;
+      case 'course_colors':
+        _icloudSyncCourseColors = value;
+        await prefs.setBool('icloud_sync_course_colors', value);
+        if (_icloudSyncEnabled && value) {
+          for (var id in userProfiles) {
+            final colorData = prefs.getString('${kCourseColorMapKey}_$id');
+            if (colorData != null) {
+              await ICloudService.setString('${kCourseColorMapKey}_$id', colorData);
+            }
+            final customColorData = prefs.getString('${kCourseCustomColorMapKey}_$id');
+            if (customColorData != null) {
+              await ICloudService.setString('${kCourseCustomColorMapKey}_$id', customColorData);
+            }
+          }
+        }
+        break;
+      case 'hidden_courses':
+        _icloudSyncHiddenCourses = value;
+        await prefs.setBool('icloud_sync_hidden_courses', value);
+        if (_icloudSyncEnabled && value) {
+          for (var id in userProfiles) {
+            final data = prefs.getString('${kHiddenRulesKey}_$id');
+            if (data != null) {
+              await ICloudService.setString('${kHiddenRulesKey}_$id', data);
+            }
+          }
+        }
+        break;
+      case 'theme':
+        _icloudSyncTheme = value;
+        await prefs.setBool('icloud_sync_theme', value);
+        if (_icloudSyncEnabled && value) {
+          final themeStr = prefs.getString(kThemeSettingsKey);
+          if (themeStr != null) {
+            await ICloudService.setString(kThemeSettingsKey, themeStr);
+          }
+        }
+        break;
+      case 'profiles':
+        _icloudSyncProfiles = value;
+        await prefs.setBool('icloud_sync_profiles', value);
+        if (_icloudSyncEnabled && value) {
+          await ICloudService.setString('user_profiles_list', jsonEncode(userProfiles));
+          if (currentId.isNotEmpty) {
+            await ICloudService.setString('saved_id', currentId);
+          }
+          for (var id in userProfiles) {
+            final cache = await _readScheduleCache(id);
+            if (cache != null) {
+              await ICloudService.setString('schedule_cache_$id', cache);
+            }
+          }
+        }
+        break;
+    }
+    notifyListeners();
+  }
+
+  Future<void> pullFromICloud() async {
+    if (!ICloudService.isApplePlatform) return;
+    final available = await ICloudService.isAvailable();
+    if (!available) return;
+
+    final cloudData = await ICloudService.getAllData();
+    if (cloudData.isEmpty) return;
+
+    final prefs = await SharedPreferences.getInstance();
+    bool changed = false;
+
+    // 1. 同步多用户档案与缓存
+    if (_icloudSyncProfiles) {
+      if (cloudData.containsKey('user_profiles_list')) {
+        final List<String> cloudProfiles = List<String>.from(jsonDecode(cloudData['user_profiles_list']!));
+        if (cloudProfiles.isNotEmpty) {
+          final Set<String> merged = {...userProfiles, ...cloudProfiles};
+          if (merged.length != userProfiles.length) {
+            userProfiles = merged.toList();
+            await prefs.setStringList('user_profiles_list', userProfiles);
+            changed = true;
+          }
+        }
+      }
+      for (var id in userProfiles) {
+        final cacheKey = 'schedule_cache_$id';
+        if (cloudData.containsKey(cacheKey)) {
+          final cloudCache = cloudData[cacheKey]!;
+          final localCache = await _readScheduleCache(id);
+          if (localCache != cloudCache) {
+            await _writeScheduleCache(id, cloudCache);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    // 2. 同步主题
+    if (_icloudSyncTheme) {
+      if (cloudData.containsKey(kThemeSettingsKey)) {
+        final cloudThemeStr = cloudData[kThemeSettingsKey]!;
+        final localThemeStr = prefs.getString(kThemeSettingsKey);
+        if (localThemeStr != cloudThemeStr) {
+          await prefs.setString(kThemeSettingsKey, cloudThemeStr);
+          try {
+            currentTheme = ThemeSettings.fromJson(jsonDecode(cloudThemeStr));
+            changed = true;
+          } catch (_) {}
+        }
+      }
+    }
+
+    // 3. 用户专属数据（自定义行程、颜色、隐藏课表）
+    for (var id in userProfiles) {
+      if (_icloudSyncCustomCourses) {
+        final key = '${kCustomCoursesKey}_$id';
+        if (cloudData.containsKey(key)) {
+          final cloudDataStr = cloudData[key]!;
+          final localDataStr = prefs.getString(key);
+          if (localDataStr != cloudDataStr) {
+            await prefs.setString(key, cloudDataStr);
+            if (id == currentId) {
+              await prefs.setString(kCustomCoursesKey, cloudDataStr);
+              customCourses = List<dynamic>.from(jsonDecode(cloudDataStr))
+                  .map((e) => CustomCourse.fromJson(e))
+                  .toList();
+            }
+            changed = true;
+          }
+        }
+      }
+
+      if (_icloudSyncCourseColors) {
+        final colorKey = '${kCourseColorMapKey}_$id';
+        if (cloudData.containsKey(colorKey)) {
+          final cloudColorStr = cloudData[colorKey]!;
+          final localColorStr = prefs.getString(colorKey);
+          if (localColorStr != cloudColorStr) {
+            await prefs.setString(colorKey, cloudColorStr);
+            if (id == currentId) {
+              await prefs.setString(kCourseColorMapKey, cloudColorStr);
+              final Map<String, dynamic> jsonMap = jsonDecode(cloudColorStr);
+              courseColorMap = jsonMap.map((k, v) => MapEntry(k, v as int));
+            }
+            changed = true;
+          }
+        }
+
+        final customColorKey = '${kCourseCustomColorMapKey}_$id';
+        if (cloudData.containsKey(customColorKey)) {
+          final cloudCustomColorStr = cloudData[customColorKey]!;
+          final localCustomColorStr = prefs.getString(customColorKey);
+          if (localCustomColorStr != cloudCustomColorStr) {
+            await prefs.setString(customColorKey, cloudCustomColorStr);
+            if (id == currentId) {
+              await prefs.setString(kCourseCustomColorMapKey, cloudCustomColorStr);
+              final Map<String, dynamic> jsonMap = jsonDecode(cloudCustomColorStr);
+              courseCustomColorMap = jsonMap.map((k, v) => MapEntry(k, v as String));
+            }
+            changed = true;
+          }
+        }
+      }
+
+      if (_icloudSyncHiddenCourses) {
+        final key = '${kHiddenRulesKey}_$id';
+        if (cloudData.containsKey(key)) {
+          final cloudDataStr = cloudData[key]!;
+          final localDataStr = prefs.getString(key);
+          if (localDataStr != cloudDataStr) {
+            await prefs.setString(key, cloudDataStr);
+            if (id == currentId) {
+              await prefs.setString(kHiddenRulesKey, cloudDataStr);
+              hiddenRules = List<dynamic>.from(jsonDecode(cloudDataStr))
+                  .map((e) => HiddenRule.fromJson(e))
+                  .toList();
+            }
+            changed = true;
+          }
+        }
+      }
+    }
+
+    if (changed) {
+      if (currentId.isNotEmpty) {
+        await loadFromCache(isInitial: false);
+        await loadAllProfilesData();
+      }
+      notifyListeners();
+      if (!kIsWeb) {
+        await WidgetService.syncToWidget(this);
+      }
+    }
+  }
+
+  Future<void> pushAllToICloud() async {
+    if (!ICloudService.isApplePlatform || !_icloudSyncEnabled) return;
+    final available = await ICloudService.isAvailable();
+    if (!available) return;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    // 1. 同步多用户档案与当前账号 ID
+    if (_icloudSyncProfiles) {
+      await ICloudService.setString('user_profiles_list', jsonEncode(userProfiles));
+      if (currentId.isNotEmpty) {
+        await ICloudService.setString('saved_id', currentId);
+      }
+      for (var id in userProfiles) {
+        final cache = await _readScheduleCache(id);
+        if (cache != null) {
+          await ICloudService.setString('schedule_cache_$id', cache);
+        }
+      }
+    }
+
+    // 2. 同步主题
+    if (_icloudSyncTheme) {
+      final themeStr = prefs.getString(kThemeSettingsKey);
+      if (themeStr != null) {
+        await ICloudService.setString(kThemeSettingsKey, themeStr);
+      }
+    }
+
+    // 3. 用户专属数据（自定义行程、颜色、隐藏课表）
+    for (var id in userProfiles) {
+      if (_icloudSyncCustomCourses) {
+        final data = prefs.getString('${kCustomCoursesKey}_$id');
+        if (data != null) {
+          await ICloudService.setString('${kCustomCoursesKey}_$id', data);
+        }
+      }
+      if (_icloudSyncCourseColors) {
+        final colorData = prefs.getString('${kCourseColorMapKey}_$id');
+        if (colorData != null) {
+          await ICloudService.setString('${kCourseColorMapKey}_$id', colorData);
+        }
+        final customColorData = prefs.getString('${kCourseCustomColorMapKey}_$id');
+        if (customColorData != null) {
+          await ICloudService.setString('${kCourseCustomColorMapKey}_$id', customColorData);
+        }
+      }
+      if (_icloudSyncHiddenCourses) {
+        final data = prefs.getString('${kHiddenRulesKey}_$id');
+        if (data != null) {
+          await ICloudService.setString('${kHiddenRulesKey}_$id', data);
+        }
+      }
+    }
+  }
+
+  Future<bool> restoreEverythingFromCloud() async {
+    if (!ICloudService.isApplePlatform) return false;
+    final available = await ICloudService.isAvailable();
+    if (!available) {
+      triggerToast("iCloud不可用，请检查设置");
+      return false;
+    }
+
+    isLoading = true;
+    notifyListeners();
+
+    try {
+      final cloudData = await ICloudService.getAllData();
+      if (cloudData.isEmpty) {
+        triggerToast("云端暂无备份数据");
+        return false;
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+
+      // 自动开启同步开关
+      _icloudSyncEnabled = true;
+      await prefs.setBool('icloud_sync_enabled', true);
+
+      // 1. 恢复多用户档案列表
+      if (cloudData.containsKey('user_profiles_list')) {
+        final List<dynamic> list = jsonDecode(cloudData['user_profiles_list']!);
+        userProfiles = list.map((e) => e.toString()).toList();
+        await prefs.setStringList('user_profiles_list', userProfiles);
+      }
+
+      // 2. 恢复各个用户的课表缓存
+      for (var id in userProfiles) {
+        final key = 'schedule_cache_$id';
+        if (cloudData.containsKey(key)) {
+          await _writeScheduleCache(id, cloudData[key]!);
+        }
+      }
+
+      // 3. 恢复各个用户的数据：自定义行程、颜色、隐藏课程
+      for (var id in userProfiles) {
+        final customKey = '${kCustomCoursesKey}_$id';
+        if (cloudData.containsKey(customKey)) {
+          await prefs.setString(customKey, cloudData[customKey]!);
+        }
+
+        final colorKey = '${kCourseColorMapKey}_$id';
+        if (cloudData.containsKey(colorKey)) {
+          await prefs.setString(colorKey, cloudData[colorKey]!);
+        }
+
+        final customColorKey = '${kCourseCustomColorMapKey}_$id';
+        if (cloudData.containsKey(customColorKey)) {
+          await prefs.setString(customColorKey, cloudData[customColorKey]!);
+        }
+
+        final hiddenKey = '${kHiddenRulesKey}_$id';
+        if (cloudData.containsKey(hiddenKey)) {
+          await prefs.setString(hiddenKey, cloudData[hiddenKey]!);
+        }
+      }
+
+      // 4. 恢复主题
+      if (cloudData.containsKey(kThemeSettingsKey)) {
+        final themeStr = cloudData[kThemeSettingsKey]!;
+        await prefs.setString(kThemeSettingsKey, themeStr);
+        try {
+          currentTheme = ThemeSettings.fromJson(jsonDecode(themeStr));
+        } catch (_) {}
+      }
+
+      // 5. 恢复当前登录的 saved_id
+      String? targetId;
+      if (cloudData.containsKey('saved_id')) {
+        targetId = cloudData['saved_id'];
+      }
+      if ((targetId == null || targetId.isEmpty) && userProfiles.isNotEmpty) {
+        targetId = userProfiles.first;
+      }
+
+      if (targetId != null && targetId.isNotEmpty) {
+        currentId = targetId;
+        await prefs.setString(kSavedIdKey, targetId);
+        await prefs.setBool('is_logged_in', true);
+        
+        await loadColorMapForUser(targetId);
+        await loadCustomCoursesForUser(targetId);
+        await loadHiddenRulesForUser(targetId);
+        await loadFromCache(isInitial: true);
+        await loadAllProfilesData();
+        
+        triggerToast("iCloud数据同步成功");
+        return true;
+      } else {
+        triggerToast("iCloud恢复成功，但未找到关联账户");
+        return true;
+      }
+    } catch (e) {
+      debugPrint("Error restoring from iCloud: $e");
+      triggerToast("iCloud同步恢复失败");
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
 }
 
 class DateFormat {
