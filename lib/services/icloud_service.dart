@@ -19,6 +19,17 @@ class ICloudService {
     }
   }
 
+  /// 强制同步 NSUbiquitousKeyValueStore，确保本地缓存是最新的云端数据
+  static Future<bool> synchronize() async {
+    if (!isApplePlatform) return false;
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('synchronize');
+      return success ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
   /// 向 iCloud 写入键值对
   static Future<bool> setString(String key, String value) async {
     if (!isApplePlatform) return false;
@@ -48,6 +59,17 @@ class ICloudService {
     if (!isApplePlatform) return false;
     try {
       final bool? success = await _channel.invokeMethod<bool>('remove', key);
+      return success ?? false;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  /// 清空 iCloud 中的所有数据
+  static Future<bool> clear() async {
+    if (!isApplePlatform) return false;
+    try {
+      final bool? success = await _channel.invokeMethod<bool>('clear');
       return success ?? false;
     } catch (e) {
       return false;

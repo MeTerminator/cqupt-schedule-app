@@ -6,6 +6,7 @@ import org.json.JSONObject
 
 // 课程实例模型
 data class Course(
+    val id: String,
     val name: String,
     val location: String,
     val teacher: String?,
@@ -92,6 +93,7 @@ object ScheduleDataProcessor {
     private fun mapToCourse(c: JSONObject): Course {
         val startTime = c.getString("start_time")
         return Course(
+            id = c.optString("id", c.getString("course")),
             name = c.getString("course"),
             location = c.getString("location"),
             teacher = c.optString("teacher", "未知"),

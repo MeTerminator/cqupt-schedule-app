@@ -14,6 +14,13 @@ object WidgetAlarmManager {
     private const val REQUEST_CODE_TODAY = 1002
 
     fun scheduleNextUpdate(context: Context) {
+        // Sync Live Update Notification first!
+        try {
+            syncLiveUpdateNotification(context)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error syncing live update notification: ${e.message}", e)
+        }
+
         val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
         val jsonString = prefs.getString("full_schedule_json", null)
         val scheduleData = ScheduleDataProcessor.process(jsonString) ?: return
@@ -57,6 +64,86 @@ object WidgetAlarmManager {
 
         if (nextUpdateTime != null) {
             setAlarm(context, nextUpdateTime)
+        }
+    }
+
+    private fun syncLiveUpdateNotification(context: Context) {
+        val prefs = context.getSharedPreferences("HomeWidgetPreferences", Context.MODE_PRIVATE)
+        
+        // 1. Read settings
+        val beforeEnabled = prefs.getBoolean("live_before_enabled", false)
+        val duringEnabled = prefs.getBoolean("live_during_enabled", false)
+        val leadMinutes = prefs.getInt("live_lead_minutes", 15)
+
+        if (!beforeEnabled && !duringEnabled) {
+            CourseLiveActivityManager.stopCourseLiveActivity(context)
+            return
+        }
+
+        val jsonString = prefs.getString("full_schedule_json", null)
+        val scheduleData = ScheduleDataProcessor.process(jsonString)
+        if (scheduleData == null) {
+            CourseLiveActivityManager.stopCourseLiveActivity(context)
+            return
+        }
+
+        val now = Calendar.getInstance()
+        val currentMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
+
+        val todayCourses = scheduleData.courses.take(scheduleData.todayCourseCount)
+        var targetCourse: Course? = null
+        var isOngoing = false
+
+        for (course in todayCourses) {
+            val startMin = timeToMin(course.startTime)
+            val endMin = timeToMin(course.endTime)
+
+            // 1. If currently in class
+            if (currentMinutes >= startMin && currentMinutes < endMin) {
+                if (duringEnabled) {
+                    targetCourse = course
+                    isOngoing = true
+                    break
+                }
+            }
+            // 2. If upcoming class
+            if (currentMinutes < startMin) {
+                if (beforeEnabled) {
+                    targetCourse = course
+                    isOngoing = false
+                    break
+                }
+            }
+        }
+
+        if (targetCourse != null) {
+            val startTimeParts = targetCourse.startTime.split(":")
+            val endTimeParts = targetCourse.endTime.split(":")
+            
+            val startCal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, startTimeParts[0].toInt())
+                set(Calendar.MINUTE, startTimeParts[1].toInt())
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val endCal = Calendar.getInstance().apply {
+                set(Calendar.HOUR_OF_DAY, endTimeParts[0].toInt())
+                set(Calendar.MINUTE, endTimeParts[1].toInt())
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }
+
+            CourseLiveActivityManager.startCourseLiveActivity(
+                context = context,
+                courseId = targetCourse.id,
+                courseName = targetCourse.name,
+                classroom = if (targetCourse.location.isEmpty()) "无教室" else targetCourse.location,
+                startTimeInMillis = startCal.timeInMillis,
+                endTimeInMillis = endCal.timeInMillis,
+                leadMinutes = leadMinutes
+            )
+        } else {
+            CourseLiveActivityManager.stopCourseLiveActivity(context)
         }
     }
 

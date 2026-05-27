@@ -231,7 +231,6 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
               await viewModel.toggleICloudSyncOption('profiles', value);
             },
           ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
           ListTile(
             title: const Text(
               '立即手动同步',
@@ -252,6 +251,52 @@ class _ICloudSettingsViewState extends State<ICloudSettingsView> {
                     await viewModel.pushAllToICloud();
                     await viewModel.pullFromICloud();
                     viewModel.triggerToast("数据同步完成");
+                  },
+          ),
+          const Divider(height: 1, indent: 16, endIndent: 16),
+          ListTile(
+            title: const Text(
+              '清空云端备份数据',
+              style: TextStyle(fontSize: 14, color: Colors.red, fontWeight: FontWeight.bold),
+            ),
+            subtitle: const Text('从云端彻底删除当前应用的所有备份数据', style: TextStyle(fontSize: 11)),
+            trailing: viewModel.isLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2.2),
+                  )
+                : const Icon(Icons.delete_forever_rounded, color: Colors.red, size: 20),
+            onTap: viewModel.isLoading
+                ? null
+                : () async {
+                    HapticFeedback.heavyImpact();
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: const Text('清空云端备份'),
+                        content: const Text('此操作将从 iCloud 云端彻底清空本应用保存的所有自定义设置、行程及颜色等备份数据。本地设备的数据不会受到影响。\n\n确定要清空吗？'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.of(context).pop(false),
+                            child: const Text('取消'),
+                          ),
+                          TextButton(
+                            style: TextButton.styleFrom(foregroundColor: Colors.red),
+                            onPressed: () => Navigator.of(context).pop(true),
+                            child: const Text('确定清空', style: TextStyle(fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    );
+                    if (confirm == true) {
+                      final success = await viewModel.clearAllICloudData();
+                      if (success) {
+                        viewModel.triggerToast("云端备份数据已清空");
+                      } else {
+                        viewModel.triggerToast("清空失败，请稍后重试");
+                      }
+                    }
                   },
           ),
         ],

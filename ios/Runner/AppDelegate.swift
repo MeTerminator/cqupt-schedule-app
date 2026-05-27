@@ -96,6 +96,9 @@ extension UUID {
     icloudChannel.setMethodCallHandler { (call, result) in
         if call.method == "isAvailable" {
             result(true)
+        } else if call.method == "synchronize" {
+            let success = NSUbiquitousKeyValueStore.default.synchronize()
+            result(success)
         } else if call.method == "setString" {
             guard let args = call.arguments as? [String: Any],
                   let key = args["key"] as? String,
@@ -120,7 +123,15 @@ extension UUID {
             NSUbiquitousKeyValueStore.default.removeObject(forKey: key)
             NSUbiquitousKeyValueStore.default.synchronize()
             result(true)
+        } else if call.method == "clear" {
+            let store = NSUbiquitousKeyValueStore.default
+            for key in store.dictionaryRepresentation.keys {
+                store.removeObject(forKey: key)
+            }
+            let success = store.synchronize()
+            result(success)
         } else if call.method == "getAllData" {
+            NSUbiquitousKeyValueStore.default.synchronize()
             let dict = NSUbiquitousKeyValueStore.default.dictionaryRepresentation
             var stringDict: [String: String] = [:]
             for (key, val) in dict {

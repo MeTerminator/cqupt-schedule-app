@@ -65,8 +65,16 @@ class ScheduleViewModel extends ChangeNotifier {
   static const String kThemeSettingsKey = "theme_settings";
   static const String kWebBackgroundImageKey = "web_background_image_base64";
   static const String kHiddenRulesKey = "hidden_rules";
+  static const String kSyncTimestampSuffix = "__ts";
 
   Uint8List? _webBackgroundImageBytes; // Web 平台背景图字节缓存
+
+  /// 获取某个 iCloud 键对应的时间戳键名
+  static String _tsKey(String key) => '$key$kSyncTimestampSuffix';
+
+  /// 获取当前时间戳字符串（毫秒）
+  static String _nowTimestamp() =>
+      DateTime.now().millisecondsSinceEpoch.toString();
 
   ScheduleViewModel() {
     _refreshTimer = Timer.periodic(
@@ -351,8 +359,14 @@ class ScheduleViewModel extends ChangeNotifier {
       await prefs.setString(kCourseCustomColorMapKey, jsonEncode(courseCustomColorMap));
     }
     if (_icloudSyncEnabled && _icloudSyncCourseColors) {
+      final ts = _nowTimestamp();
+      final prefs2 = await SharedPreferences.getInstance();
       await ICloudService.setString('${kCourseColorMapKey}_$studentId', jsonEncode(courseColorMap));
+      await ICloudService.setString(_tsKey('${kCourseColorMapKey}_$studentId'), ts);
+      await prefs2.setString(_tsKey('${kCourseColorMapKey}_$studentId'), ts);
       await ICloudService.setString('${kCourseCustomColorMapKey}_$studentId', jsonEncode(courseCustomColorMap));
+      await ICloudService.setString(_tsKey('${kCourseCustomColorMapKey}_$studentId'), ts);
+      await prefs2.setString(_tsKey('${kCourseCustomColorMapKey}_$studentId'), ts);
     }
   }
 
@@ -427,6 +441,11 @@ class ScheduleViewModel extends ChangeNotifier {
       if (!kIsWeb) {
         await WidgetService.syncToWidget(this);
       }
+      // 每次刷新都触发 iCloud 同步（先推再拉）
+      if (_icloudSyncEnabled) {
+        await pushAllToICloud();
+        await pullFromICloud();
+      }
       if (!silent) {
         isLoading = false;
         notifyListeners();
@@ -475,7 +494,27 @@ class ScheduleViewModel extends ChangeNotifier {
       }
     }
     if (_icloudSyncEnabled && _icloudSyncProfiles) {
+      final ts = _nowTimestamp();
+      final prefs2 = await SharedPreferences.getInstance();
       await ICloudService.setString('schedule_cache_$studentId', jsonStr);
+      await ICloudService.setString(_tsKey('schedule_cache_$studentId'), ts);
+      await prefs2.setString(_tsKey('schedule_cache_$studentId'), ts);
+    }
+  }
+
+  /// 仅写入本地缓存，不推送到 iCloud（用于 pullFromICloud 避免循环）
+  Future<void> _writeScheduleCacheLocal(String studentId, String jsonStr) async {
+    if (kIsWeb) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('web_schedule_cache_$studentId', jsonStr);
+    } else {
+      try {
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File('${directory.path}/schedule_cache_$studentId.json');
+        await file.writeAsString(jsonStr);
+      } catch (e) {
+        debugPrint("Cache write error (local) for $studentId: $e");
+      }
     }
   }
 
@@ -649,7 +688,10 @@ class ScheduleViewModel extends ChangeNotifier {
       await prefs.setString(kCustomCoursesKey, data);
     }
     if (_icloudSyncEnabled && _icloudSyncCustomCourses) {
+      final ts = _nowTimestamp();
       await ICloudService.setString('${kCustomCoursesKey}_$studentId', data);
+      await ICloudService.setString(_tsKey('${kCustomCoursesKey}_$studentId'), ts);
+      await prefs.setString(_tsKey('${kCustomCoursesKey}_$studentId'), ts);
     }
   }
 
@@ -688,7 +730,10 @@ class ScheduleViewModel extends ChangeNotifier {
       await prefs.setString(kHiddenRulesKey, data);
     }
     if (_icloudSyncEnabled && _icloudSyncHiddenCourses) {
+      final ts = _nowTimestamp();
       await ICloudService.setString('${kHiddenRulesKey}_$studentId', data);
+      await ICloudService.setString(_tsKey('${kHiddenRulesKey}_$studentId'), ts);
+      await prefs.setString(_tsKey('${kHiddenRulesKey}_$studentId'), ts);
     }
   }
 
@@ -1097,7 +1142,10 @@ class ScheduleViewModel extends ChangeNotifier {
     await prefs.setString(kThemeSettingsKey, data);
     notifyListeners();
     if (_icloudSyncEnabled && _icloudSyncTheme) {
+      final ts = _nowTimestamp();
       await ICloudService.setString(kThemeSettingsKey, data);
+      await ICloudService.setString(_tsKey(kThemeSettingsKey), ts);
+      await prefs.setString(_tsKey(kThemeSettingsKey), ts);
     }
   }
 
@@ -1238,8 +1286,40 @@ class ScheduleViewModel extends ChangeNotifier {
     }
   }
 
+  Future<bool> clearAllICloudData() async {
+    if (!ICloudService.isApplePlatform) return false;
+    isLoading = true;
+    notifyListeners();
+    try {
+      final success = await ICloudService.clear();
+      if (success) {
+        final prefs = await SharedPreferences.getInstance();
+        final keys = prefs.getKeys();
+        for (final key in keys) {
+          if (key.endsWith(kSyncTimestampSuffix)) {
+            await prefs.remove(key);
+          }
+        }
+      }
+      return success;
+    } catch (e) {
+      return false;
+    } finally {
+      isLoading = false;
+      notifyListeners();
+    }
+  }
+
   Future<void> toggleICloudSyncOption(String option, bool value) async {
     final prefs = await SharedPreferences.getInstance();
+    final ts = _nowTimestamp();
+
+    Future<void> pushWithTs(String key, String data) async {
+      await ICloudService.setString(key, data);
+      await ICloudService.setString(_tsKey(key), ts);
+      await prefs.setString(_tsKey(key), ts);
+    }
+
     switch (option) {
       case 'custom_courses':
         _icloudSyncCustomCourses = value;
@@ -1248,7 +1328,7 @@ class ScheduleViewModel extends ChangeNotifier {
           for (var id in userProfiles) {
             final data = prefs.getString('${kCustomCoursesKey}_$id');
             if (data != null) {
-              await ICloudService.setString('${kCustomCoursesKey}_$id', data);
+              await pushWithTs('${kCustomCoursesKey}_$id', data);
             }
           }
         }
@@ -1260,11 +1340,11 @@ class ScheduleViewModel extends ChangeNotifier {
           for (var id in userProfiles) {
             final colorData = prefs.getString('${kCourseColorMapKey}_$id');
             if (colorData != null) {
-              await ICloudService.setString('${kCourseColorMapKey}_$id', colorData);
+              await pushWithTs('${kCourseColorMapKey}_$id', colorData);
             }
             final customColorData = prefs.getString('${kCourseCustomColorMapKey}_$id');
             if (customColorData != null) {
-              await ICloudService.setString('${kCourseCustomColorMapKey}_$id', customColorData);
+              await pushWithTs('${kCourseCustomColorMapKey}_$id', customColorData);
             }
           }
         }
@@ -1276,7 +1356,7 @@ class ScheduleViewModel extends ChangeNotifier {
           for (var id in userProfiles) {
             final data = prefs.getString('${kHiddenRulesKey}_$id');
             if (data != null) {
-              await ICloudService.setString('${kHiddenRulesKey}_$id', data);
+              await pushWithTs('${kHiddenRulesKey}_$id', data);
             }
           }
         }
@@ -1287,7 +1367,7 @@ class ScheduleViewModel extends ChangeNotifier {
         if (_icloudSyncEnabled && value) {
           final themeStr = prefs.getString(kThemeSettingsKey);
           if (themeStr != null) {
-            await ICloudService.setString(kThemeSettingsKey, themeStr);
+            await pushWithTs(kThemeSettingsKey, themeStr);
           }
         }
         break;
@@ -1302,7 +1382,7 @@ class ScheduleViewModel extends ChangeNotifier {
           for (var id in userProfiles) {
             final cache = await _readScheduleCache(id);
             if (cache != null) {
-              await ICloudService.setString('schedule_cache_$id', cache);
+              await pushWithTs('schedule_cache_$id', cache);
             }
           }
         }
@@ -1316,13 +1396,38 @@ class ScheduleViewModel extends ChangeNotifier {
     final available = await ICloudService.isAvailable();
     if (!available) return;
 
+    // 强制同步，确保读取到最新的云端数据
+    await ICloudService.synchronize();
+
     final cloudData = await ICloudService.getAllData();
     if (cloudData.isEmpty) return;
 
     final prefs = await SharedPreferences.getInstance();
     bool changed = false;
 
-    // 1. 同步多用户档案与缓存
+    // 辅助方法：判断云端时间戳是否比本地更新
+    bool isCloudNewer(String key) {
+      final cloudTsStr = cloudData[_tsKey(key)];
+      final localTsStr = prefs.getString(_tsKey(key));
+
+      // 云端无时间戳 → 旧数据，跳过；本地无时间戳 → 首次拉取，采用云端
+      if (cloudTsStr == null) return false;
+      if (localTsStr == null) return true;
+
+      final cloudTs = int.tryParse(cloudTsStr) ?? 0;
+      final localTs = int.tryParse(localTsStr) ?? 0;
+      return cloudTs > localTs;
+    }
+
+    // 辅助方法：保存云端时间戳到本地
+    Future<void> saveCloudTimestamp(String key) async {
+      final cloudTsStr = cloudData[_tsKey(key)];
+      if (cloudTsStr != null) {
+        await prefs.setString(_tsKey(key), cloudTsStr);
+      }
+    }
+
+    // 1. 同步多用户档案与缓存（档案列表使用合并策略，不走时间戳）
     if (_icloudSyncProfiles) {
       if (cloudData.containsKey('user_profiles_list')) {
         final List<String> cloudProfiles = List<String>.from(jsonDecode(cloudData['user_profiles_list']!));
@@ -1337,29 +1442,25 @@ class ScheduleViewModel extends ChangeNotifier {
       }
       for (var id in userProfiles) {
         final cacheKey = 'schedule_cache_$id';
-        if (cloudData.containsKey(cacheKey)) {
+        if (cloudData.containsKey(cacheKey) && isCloudNewer(cacheKey)) {
           final cloudCache = cloudData[cacheKey]!;
-          final localCache = await _readScheduleCache(id);
-          if (localCache != cloudCache) {
-            await _writeScheduleCache(id, cloudCache);
-            changed = true;
-          }
+          await _writeScheduleCacheLocal(id, cloudCache);
+          await saveCloudTimestamp(cacheKey);
+          changed = true;
         }
       }
     }
 
     // 2. 同步主题
     if (_icloudSyncTheme) {
-      if (cloudData.containsKey(kThemeSettingsKey)) {
+      if (cloudData.containsKey(kThemeSettingsKey) && isCloudNewer(kThemeSettingsKey)) {
         final cloudThemeStr = cloudData[kThemeSettingsKey]!;
-        final localThemeStr = prefs.getString(kThemeSettingsKey);
-        if (localThemeStr != cloudThemeStr) {
-          await prefs.setString(kThemeSettingsKey, cloudThemeStr);
-          try {
-            currentTheme = ThemeSettings.fromJson(jsonDecode(cloudThemeStr));
-            changed = true;
-          } catch (_) {}
-        }
+        await prefs.setString(kThemeSettingsKey, cloudThemeStr);
+        await saveCloudTimestamp(kThemeSettingsKey);
+        try {
+          currentTheme = ThemeSettings.fromJson(jsonDecode(cloudThemeStr));
+          changed = true;
+        } catch (_) {}
       }
     }
 
@@ -1367,69 +1468,61 @@ class ScheduleViewModel extends ChangeNotifier {
     for (var id in userProfiles) {
       if (_icloudSyncCustomCourses) {
         final key = '${kCustomCoursesKey}_$id';
-        if (cloudData.containsKey(key)) {
+        if (cloudData.containsKey(key) && isCloudNewer(key)) {
           final cloudDataStr = cloudData[key]!;
-          final localDataStr = prefs.getString(key);
-          if (localDataStr != cloudDataStr) {
-            await prefs.setString(key, cloudDataStr);
-            if (id == currentId) {
-              await prefs.setString(kCustomCoursesKey, cloudDataStr);
-              customCourses = List<dynamic>.from(jsonDecode(cloudDataStr))
-                  .map((e) => CustomCourse.fromJson(e))
-                  .toList();
-            }
-            changed = true;
+          await prefs.setString(key, cloudDataStr);
+          await saveCloudTimestamp(key);
+          if (id == currentId) {
+            await prefs.setString(kCustomCoursesKey, cloudDataStr);
+            customCourses = List<dynamic>.from(jsonDecode(cloudDataStr))
+                .map((e) => CustomCourse.fromJson(e))
+                .toList();
           }
+          changed = true;
         }
       }
 
       if (_icloudSyncCourseColors) {
         final colorKey = '${kCourseColorMapKey}_$id';
-        if (cloudData.containsKey(colorKey)) {
+        if (cloudData.containsKey(colorKey) && isCloudNewer(colorKey)) {
           final cloudColorStr = cloudData[colorKey]!;
-          final localColorStr = prefs.getString(colorKey);
-          if (localColorStr != cloudColorStr) {
-            await prefs.setString(colorKey, cloudColorStr);
-            if (id == currentId) {
-              await prefs.setString(kCourseColorMapKey, cloudColorStr);
-              final Map<String, dynamic> jsonMap = jsonDecode(cloudColorStr);
-              courseColorMap = jsonMap.map((k, v) => MapEntry(k, v as int));
-            }
-            changed = true;
+          await prefs.setString(colorKey, cloudColorStr);
+          await saveCloudTimestamp(colorKey);
+          if (id == currentId) {
+            await prefs.setString(kCourseColorMapKey, cloudColorStr);
+            final Map<String, dynamic> jsonMap = jsonDecode(cloudColorStr);
+            courseColorMap = jsonMap.map((k, v) => MapEntry(k, v as int));
           }
+          changed = true;
         }
 
         final customColorKey = '${kCourseCustomColorMapKey}_$id';
-        if (cloudData.containsKey(customColorKey)) {
+        if (cloudData.containsKey(customColorKey) && isCloudNewer(customColorKey)) {
           final cloudCustomColorStr = cloudData[customColorKey]!;
-          final localCustomColorStr = prefs.getString(customColorKey);
-          if (localCustomColorStr != cloudCustomColorStr) {
-            await prefs.setString(customColorKey, cloudCustomColorStr);
-            if (id == currentId) {
-              await prefs.setString(kCourseCustomColorMapKey, cloudCustomColorStr);
-              final Map<String, dynamic> jsonMap = jsonDecode(cloudCustomColorStr);
-              courseCustomColorMap = jsonMap.map((k, v) => MapEntry(k, v as String));
-            }
-            changed = true;
+          await prefs.setString(customColorKey, cloudCustomColorStr);
+          await saveCloudTimestamp(customColorKey);
+          if (id == currentId) {
+            await prefs.setString(kCourseCustomColorMapKey, cloudCustomColorStr);
+            final Map<String, dynamic> jsonMap = jsonDecode(cloudCustomColorStr);
+            courseCustomColorMap = jsonMap.map((k, v) => MapEntry(k, v as String));
           }
+          changed = true;
         }
       }
 
       if (_icloudSyncHiddenCourses) {
         final key = '${kHiddenRulesKey}_$id';
-        if (cloudData.containsKey(key)) {
+        if (cloudData.containsKey(key) && isCloudNewer(key)) {
           final cloudDataStr = cloudData[key]!;
-          final localDataStr = prefs.getString(key);
-          if (localDataStr != cloudDataStr) {
-            await prefs.setString(key, cloudDataStr);
-            if (id == currentId) {
-              await prefs.setString(kHiddenRulesKey, cloudDataStr);
-              hiddenRules = List<dynamic>.from(jsonDecode(cloudDataStr))
-                  .map((e) => HiddenRule.fromJson(e))
-                  .toList();
-            }
-            changed = true;
+          await prefs.setString(key, cloudDataStr);
+          await saveCloudTimestamp(key);
+          if (id == currentId) {
+            await prefs.setString(kHiddenRulesKey, cloudDataStr);
+            hiddenRules = List<dynamic>.from(jsonDecode(cloudDataStr))
+                .map((e) => HiddenRule.fromJson(e))
+                .toList();
           }
+          changed = true;
         }
       }
     }
@@ -1452,6 +1545,14 @@ class ScheduleViewModel extends ChangeNotifier {
     if (!available) return;
 
     final prefs = await SharedPreferences.getInstance();
+    final ts = _nowTimestamp();
+
+    // 辅助方法：同时写入 iCloud 和本地时间戳
+    Future<void> pushWithTimestamp(String key, String value) async {
+      await ICloudService.setString(key, value);
+      await ICloudService.setString(_tsKey(key), ts);
+      await prefs.setString(_tsKey(key), ts);
+    }
 
     // 1. 同步多用户档案与当前账号 ID
     if (_icloudSyncProfiles) {
@@ -1462,7 +1563,7 @@ class ScheduleViewModel extends ChangeNotifier {
       for (var id in userProfiles) {
         final cache = await _readScheduleCache(id);
         if (cache != null) {
-          await ICloudService.setString('schedule_cache_$id', cache);
+          await pushWithTimestamp('schedule_cache_$id', cache);
         }
       }
     }
@@ -1471,7 +1572,7 @@ class ScheduleViewModel extends ChangeNotifier {
     if (_icloudSyncTheme) {
       final themeStr = prefs.getString(kThemeSettingsKey);
       if (themeStr != null) {
-        await ICloudService.setString(kThemeSettingsKey, themeStr);
+        await pushWithTimestamp(kThemeSettingsKey, themeStr);
       }
     }
 
@@ -1480,23 +1581,23 @@ class ScheduleViewModel extends ChangeNotifier {
       if (_icloudSyncCustomCourses) {
         final data = prefs.getString('${kCustomCoursesKey}_$id');
         if (data != null) {
-          await ICloudService.setString('${kCustomCoursesKey}_$id', data);
+          await pushWithTimestamp('${kCustomCoursesKey}_$id', data);
         }
       }
       if (_icloudSyncCourseColors) {
         final colorData = prefs.getString('${kCourseColorMapKey}_$id');
         if (colorData != null) {
-          await ICloudService.setString('${kCourseColorMapKey}_$id', colorData);
+          await pushWithTimestamp('${kCourseColorMapKey}_$id', colorData);
         }
         final customColorData = prefs.getString('${kCourseCustomColorMapKey}_$id');
         if (customColorData != null) {
-          await ICloudService.setString('${kCourseCustomColorMapKey}_$id', customColorData);
+          await pushWithTimestamp('${kCourseCustomColorMapKey}_$id', customColorData);
         }
       }
       if (_icloudSyncHiddenCourses) {
         final data = prefs.getString('${kHiddenRulesKey}_$id');
         if (data != null) {
-          await ICloudService.setString('${kHiddenRulesKey}_$id', data);
+          await pushWithTimestamp('${kHiddenRulesKey}_$id', data);
         }
       }
     }

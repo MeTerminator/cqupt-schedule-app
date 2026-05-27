@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:home_widget/home_widget.dart';
 import '../models/schedule_model.dart';
 import '../view_models/schedule_view_model.dart';
 
@@ -490,6 +491,16 @@ class AlarmService {
     try {
       final beforeEnabled = await getCourseLiveActivityBeforeClassEnabled();
       final duringEnabled = await getCourseLiveActivityDuringClassEnabled();
+      final leadMinutes = await getCourseLiveActivityLeadMinutes();
+
+      try {
+        await HomeWidget.saveWidgetData('live_before_enabled', beforeEnabled);
+        await HomeWidget.saveWidgetData('live_during_enabled', duringEnabled);
+        await HomeWidget.saveWidgetData('live_lead_minutes', leadMinutes);
+      } catch (e) {
+        print('Error saving live settings to HomeWidget: $e');
+      }
+
       if (!beforeEnabled && !duringEnabled) {
         await stopCourseLiveActivity();
         return;
@@ -547,8 +558,6 @@ class AlarmService {
 
       // 按开始时间升序排列
       coursePeriods.sort((a, b) => (a['startTime'] as DateTime).compareTo(b['startTime'] as DateTime));
-
-      final leadMinutes = await getCourseLiveActivityLeadMinutes();
 
       // 寻找当前正在上课或者即将上课的课程
       Map<String, dynamic>? targetPeriod;
