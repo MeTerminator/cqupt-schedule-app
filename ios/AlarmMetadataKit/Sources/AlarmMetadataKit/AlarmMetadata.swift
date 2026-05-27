@@ -1,5 +1,6 @@
 import AlarmKit
 import SwiftUI
+import ActivityKit
 
 // MARK: - SimpleAlarmMetadata
 // 定义在独立的 Swift Package 中，使 Runner 和 CourseWidget 两个 Target
@@ -9,10 +10,40 @@ import SwiftUI
 @available(iOS 26.0, *)
 public struct SimpleAlarmMetadata: AlarmMetadata {
     public var appName: String
+    public var snoozeMinutes: Int
+    public var alarmId: String
     
-    public init(appName: String = "cqupt_schedule_app") {
+    public init(appName: String = "cqupt_schedule_app", snoozeMinutes: Int = 9, alarmId: String = "") {
         self.appName = appName
+        self.snoozeMinutes = snoozeMinutes
+        self.alarmId = alarmId
     }
+}
+
+// MARK: - CourseAttributes
+// 定义在独立的 Swift Package 中，使 Runner 和 CourseWidget 两个 Target
+// 引用的是完全相同的 Swift 模块类型（AlarmMetadataKit.CourseAttributes）
+// 这是让 Course Live Activity 正确跨进程类型匹配的唯一可靠方案
+
+@available(iOS 26.0, *)
+public struct CourseAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        public var courseName: String
+        public var classroom: String
+        public var startTime: Date
+        public var endTime: Date
+        public var leadMinutes: Int
+        
+        public init(courseName: String, classroom: String, startTime: Date, endTime: Date, leadMinutes: Int) {
+            self.courseName = courseName
+            self.classroom = classroom
+            self.startTime = startTime
+            self.endTime = endTime
+            self.leadMinutes = leadMinutes
+        }
+    }
+    
+    public init() {}
 }
 
 // MARK: - AlarmButton 便利扩展

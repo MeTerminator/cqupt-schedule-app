@@ -3,62 +3,7 @@ import UIKit
 import SwiftUI
 import AlarmKit
 import ActivityKit
-
-// MARK: - Alarm 元数据和按钮拖展
-// 注意：SimpleAlarmMetadata 同时定义在 CourseWidget/WidgetBundle.swift 中
-// 两处的类型必须完全相同才能让 AlarmKit 正确关联 Live Activity
-// 目前两处独立定义，属于不同 Module，待通过 Xcode 添加 Local Package 解决
-
-@available(iOS 26.0, *)
-struct SimpleAlarmMetadata: AlarmMetadata {
-    var appName: String = "cqupt_schedule_app"
-    /// 稍后提醒时长（分钟），供 Widget 平钺计算进度环比例
-    var snoozeMinutes: Int = 9
-    var alarmId: String = ""
-}
-
-@available(iOS 26.0, *)
-struct CourseAttributes: ActivityAttributes {
-    public struct ContentState: Codable, Hashable {
-        var courseName: String
-        var classroom: String
-        var startTime: Date
-        var endTime: Date
-        var leadMinutes: Int
-    }
-}
-
-@available(iOS 26.0, *)
-extension AlarmButton {
-    static var stopButton: Self {
-        AlarmButton(
-            text: LocalizedStringResource(String.LocalizationValue("我知道了")),
-            textColor: .white,
-            systemImageName: "stop.circle"
-        )
-    }
-    static var pauseButton: Self {
-        AlarmButton(
-            text: LocalizedStringResource(String.LocalizationValue("暂停")),
-            textColor: .white,
-            systemImageName: "pause.fill"
-        )
-    }
-    static var resumeButton: Self {
-        AlarmButton(
-            text: LocalizedStringResource(String.LocalizationValue("继续")),
-            textColor: .white,
-            systemImageName: "play.fill"
-        )
-    }
-    static var snoozeButton: Self {
-        AlarmButton(
-            text: LocalizedStringResource(String.LocalizationValue("稍后提醒")),
-            textColor: .white,
-            systemImageName: "repeat.circle"
-        )
-    }
-}
+import AlarmMetadataKit
 
 extension UUID {
     static func deterministic(from string: String) -> UUID {
