@@ -56,6 +56,21 @@ class ScheduleGrid extends StatelessWidget {
     return (finalY, finalHeight.clamp(30.0, double.infinity));
   }
 
+  int getColumnIndexFromDayNum(int dayNum, int weekStartDay) {
+    if (weekStartDay == 7) {
+      return dayNum == 7 ? 0 : dayNum;
+    } else {
+      return dayNum - 1;
+    }
+  }
+
+  int getDayOffsetFromMonday(int columnIndex, int weekStartDay) {
+    if (weekStartDay == 7) {
+      return columnIndex - 1;
+    }
+    return columnIndex;
+  }
+
   DateInfo getDate(int dayIndex) {
     if (viewModel.scheduleData == null) return DateInfo("", "");
 
@@ -67,7 +82,8 @@ class ScheduleGrid extends StatelessWidget {
       return DateInfo("", "");
     }
 
-    final offset = (weekToShow - 1) * 7 + dayIndex;
+    final weekStartDay = viewModel.currentTheme.weekStartDay;
+    final offset = (weekToShow - 1) * 7 + getDayOffsetFromMonday(dayIndex, weekStartDay);
     final targetDate = startDate.add(Duration(days: offset));
 
     return DateInfo(targetDate.month.toString(), targetDate.day.toString());
@@ -78,7 +94,9 @@ class ScheduleGrid extends StatelessWidget {
       return false;
     }
     final weekday = DateTime.now().weekday;
-    return dayIndex == weekday - 1;
+    final weekStartDay = viewModel.currentTheme.weekStartDay;
+    final targetColumnIndex = getColumnIndexFromDayNum(weekday, weekStartDay);
+    return dayIndex == targetColumnIndex;
   }
 
   @override
@@ -107,6 +125,11 @@ class ScheduleGrid extends StatelessWidget {
   Widget _buildHeader(BuildContext context, bool isDark) {
     final dateInfo = getDate(0);
     final timelineColor = viewModel.timelineTextColor;
+    final weekStartDay = viewModel.currentTheme.weekStartDay;
+    final weekdays = weekStartDay == 7
+        ? const ['日', '一', '二', '三', '四', '五', '六']
+        : const ['一', '二', '三', '四', '五', '六', '日'];
+
     return Container(
       padding: const EdgeInsets.only(bottom: 10),
       child: Row(
@@ -160,7 +183,7 @@ class ScheduleGrid extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      ['一', '二', '三', '四', '五', '六', '日'][i],
+                      weekdays[i],
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: today ? FontWeight.bold : FontWeight.w500,
@@ -250,6 +273,7 @@ class ScheduleGrid extends StatelessWidget {
     bool isDark,
   ) {
     final commonFreePeriods = viewModel.getCommonFreePeriods(weekToShow);
+    final weekStartDay = viewModel.currentTheme.weekStartDay;
 
     return SizedBox(
       height: hourHeight * 12,
@@ -305,7 +329,7 @@ class ScheduleGrid extends StatelessWidget {
                     final periodCount = g.length;
 
                     return Positioned(
-                      left: (day - 1) * colW + 2,
+                      left: getColumnIndexFromDayNum(day, weekStartDay) * colW + 2,
                       top: (startPeriod - 1) * hourHeight + 2,
                       width: colW - 4,
                       height: periodCount * hourHeight - 4,
@@ -376,7 +400,7 @@ class ScheduleGrid extends StatelessWidget {
               ...courses.map((course) {
                 final geoInfo = calculateGeometry(course);
                 return Positioned(
-                  left: (course.day - 1) * colW + 1,
+                  left: getColumnIndexFromDayNum(course.day, weekStartDay) * colW + 1,
                   top: geoInfo.$1 + 1,
                   width: colW - 2,
                   height: geoInfo.$2 - 2,

@@ -26,6 +26,9 @@ class ThemeSettings {
   final String? headerBackgroundColorHex; // 导航栏背景颜色
   final double headerBackgroundOpacity; // 导航栏背景不透明度 (0.0 - 1.0)
 
+  // 一周起始日：1为周一，7为周日，默认1
+  final int weekStartDay; 
+
   ThemeSettings({
     required this.id,
     required this.name,
@@ -41,6 +44,7 @@ class ThemeSettings {
     this.headerBlurEffect = false,
     this.headerBackgroundColorHex,
     this.headerBackgroundOpacity = 1.0,
+    this.weekStartDay = 1,
   });
 
   Map<String, dynamic> toJson() => {
@@ -58,6 +62,7 @@ class ThemeSettings {
     'header_blur_effect': headerBlurEffect,
     'header_background_color_hex': headerBackgroundColorHex,
     'header_background_opacity': headerBackgroundOpacity,
+    'week_start_day': weekStartDay,
   };
 
   factory ThemeSettings.fromJson(Map<String, dynamic> json) {
@@ -82,6 +87,7 @@ class ThemeSettings {
       headerBackgroundColorHex: json['header_background_color_hex'] as String?,
       headerBackgroundOpacity: (json['header_background_opacity'] ?? 1.0)
           .toDouble(),
+      weekStartDay: json['week_start_day'] as int? ?? 1,
     );
   }
 
@@ -100,6 +106,7 @@ class ThemeSettings {
     bool? headerBlurEffect,
     String? headerBackgroundColorHex,
     double? headerBackgroundOpacity,
+    int? weekStartDay,
   }) {
     return ThemeSettings(
       id: id ?? this.id,
@@ -121,6 +128,7 @@ class ThemeSettings {
           headerBackgroundColorHex ?? this.headerBackgroundColorHex,
       headerBackgroundOpacity:
           headerBackgroundOpacity ?? this.headerBackgroundOpacity,
+      weekStartDay: weekStartDay ?? this.weekStartDay,
     );
   }
 
@@ -136,6 +144,7 @@ class ThemeSettings {
       courseBlockBorderColorHex: null,
       courseBlockBorderWidth: 0.0,
       courseBlockOpacity: 1.0,
+      weekStartDay: 1,
     );
   }
 }

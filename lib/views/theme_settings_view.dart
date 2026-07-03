@@ -122,6 +122,10 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
 
             // 课程块不透明度设置
             _buildSection(context, '课程块外观', [_buildOpacitySlider(context)]),
+            const SizedBox(height: 24),
+
+            // 一周起始日设置
+            _buildSection(context, '一周起始日', [_buildWeekStartSelector(context)]),
             const SizedBox(height: 32),
 
             // 重置按钮
@@ -613,6 +617,93 @@ class _ThemeSettingsContentState extends State<_ThemeSettingsContent> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildWeekStartSelector(BuildContext context) {
+    final startDay = _currentTheme.weekStartDay;
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
+    return Row(
+      children: [
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _updateAndSaveTheme(
+              _currentTheme.copyWith(weekStartDay: 1),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: startDay == 1
+                    ? primaryColor.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: startDay == 1 ? primaryColor : Colors.grey.shade400,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.calendar_view_week_rounded,
+                    color: startDay == 1 ? primaryColor : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '周一起始',
+                    style: TextStyle(
+                      color: startDay == 1 ? primaryColor : Colors.grey.shade600,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: GestureDetector(
+            onTap: () => _updateAndSaveTheme(
+              _currentTheme.copyWith(weekStartDay: 7),
+            ),
+            child: Container(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              decoration: BoxDecoration(
+                color: startDay == 7
+                    ? primaryColor.withValues(alpha: 0.15)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: startDay == 7 ? primaryColor : Colors.grey.shade400,
+                  width: 1.5,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.calendar_today_rounded,
+                    color: startDay == 7 ? primaryColor : Colors.grey,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    '周日起始',
+                    style: TextStyle(
+                      color: startDay == 7 ? primaryColor : Colors.grey.shade600,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
