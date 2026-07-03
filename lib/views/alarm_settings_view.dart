@@ -536,7 +536,7 @@ class _AlarmSettingsViewState extends State<AlarmSettingsView> {
       return;
     }
 
-    if (week <= 0 || week > 20) {
+    if (week <= 0 || week > 22) {
       widget.viewModel.triggerToast('学期周次无效 ($week)，无法设置');
       return;
     }

@@ -96,7 +96,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
   bool get isCurrentWeekReal {
     final real = calculateCurrentRealWeek();
-    final expected = real <= 0 ? 0 : (real > 20 ? 20 : real);
+    final expected = real <= 0 ? 0 : (real > 22 ? 22 : real);
     return selectedWeek == expected;
   }
 
@@ -219,7 +219,7 @@ class ScheduleViewModel extends ChangeNotifier {
     int minDiff = 999999;
 
     for (int w = currentRealWeek; w <= currentRealWeek + 1; w++) {
-      if (w <= 0 || w > 20) continue;
+      if (w <= 0 || w > 22) continue;
 
       final courses = allCourses(w);
       for (var c in courses) {
@@ -242,7 +242,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
   bool hasAnyCourseOngoing() {
     final realWeek = calculateCurrentRealWeek();
-    if (realWeek <= 0 || realWeek > 20) return false;
+    if (realWeek <= 0 || realWeek > 22) return false;
     return allCourses(realWeek).any((c) => isCourseOngoing(c));
   }
 
@@ -566,7 +566,7 @@ class ScheduleViewModel extends ChangeNotifier {
 
       if (autoJump) {
         final real = calculateCurrentRealWeek();
-        selectedWeek = real.clamp(0, 20);
+        selectedWeek = real.clamp(0, 22);
         // 初始加载时不使用动画
         shouldAnimateToWeek = false;
       }
@@ -577,7 +577,7 @@ class ScheduleViewModel extends ChangeNotifier {
   }
 
   void updateSelectedWeek(int week, {bool animate = false}) {
-    selectedWeek = week.clamp(0, 20);
+    selectedWeek = week.clamp(0, 22);
     shouldAnimateToWeek = animate;
     notifyListeners();
   }

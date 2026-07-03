@@ -317,7 +317,7 @@ class _MainHomeViewState extends State<MainHomeView> {
                     Expanded(
                       child: PageView.builder(
                         controller: _pageController,
-                        itemCount: 21,
+                        itemCount: 23,
                         onPageChanged: (index) {
                           viewModel.selectedWeek = index;
                           viewModel.notifyListeners();

@@ -87,7 +87,7 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
 
   void _selectAllWeeks() {
     setState(() {
-      _selectedWeeks = Set.from(List.generate(21, (i) => i));
+      _selectedWeeks = Set.from(List.generate(23, (i) => i));
     });
   }
 
@@ -383,7 +383,7 @@ class _AddCustomCourseViewState extends State<AddCustomCourseView> {
           height: 42,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: 21,
+            itemCount: 23,
             separatorBuilder: (context, index) => const SizedBox(width: 8),
             itemBuilder: (context, index) {
               final week = index;

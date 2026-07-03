@@ -36,7 +36,7 @@ class _HomeViewState extends State<HomeView> {
                 ),
                 Expanded(
                   child: PageView.builder(
-                    itemCount: 21,
+                    itemCount: 23,
                     controller: PageController(
                       initialPage: viewModel.selectedWeek,
                     ),
