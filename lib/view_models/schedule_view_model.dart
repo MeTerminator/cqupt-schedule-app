@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../utils/http_util.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/schedule_model.dart';
@@ -98,6 +98,15 @@ class ScheduleViewModel extends ChangeNotifier {
     final real = calculateCurrentRealWeek();
     final expected = real <= 0 ? 0 : (real > 22 ? 22 : real);
     return selectedWeek == expected;
+  }
+
+  int get targetWeek {
+    final nextCourse = getNextUpcomingCourseGlobal();
+    if (nextCourse != null) {
+      return nextCourse.week;
+    }
+    final real = calculateCurrentRealWeek();
+    return real <= 0 ? 0 : (real > 22 ? 22 : real);
   }
 
   int get currentDayOfWeek {
@@ -422,7 +431,7 @@ class ScheduleViewModel extends ChangeNotifier {
       final url = Uri.parse(
         "https://cqupt.ishub.top/api/curriculum/$currentId/curriculum.json",
       );
-      final response = await http.get(url);
+      final response = await HttpUtil.get(url);
 
       if (response.statusCode == 200) {
         final decoded = ScheduleResponse.fromJson(jsonDecode(response.body));
@@ -824,7 +833,7 @@ class ScheduleViewModel extends ChangeNotifier {
       final url = Uri.parse(
         "https://cqupt.ishub.top/api/curriculum/$studentId/curriculum.json",
       );
-      final response = await http.get(url);
+      final response = await HttpUtil.get(url);
 
       if (response.statusCode == 200) {
         final body = response.body;

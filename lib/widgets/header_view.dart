@@ -251,12 +251,11 @@ class HeaderView extends StatelessWidget {
           const Spacer(),
           Row(
             children: [
-              if (!viewModel.isCurrentWeekReal)
+              if (viewModel.selectedWeek != viewModel.targetWeek)
                 GestureDetector(
                   onTap: () {
                     HapticFeedback.mediumImpact();
-                    final realWeek = viewModel.calculateCurrentRealWeek();
-                    final target = realWeek.clamp(0, 20);
+                    final target = viewModel.targetWeek;
                     viewModel.updateSelectedWeek(target, animate: true);
                   },
                   child: Container(

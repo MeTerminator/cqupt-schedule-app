@@ -127,13 +127,35 @@ class ScheduleGrid extends StatelessWidget {
           ...List.generate(7, (i) {
             final dayInfo = getDate(i);
             final today = isToday(i);
+            final todayBgColor = today
+                ? (isDark ? Colors.white : Colors.black)
+                : null;
+            final todayTextColor = today
+                ? (isDark ? Colors.black : Colors.white)
+                : timelineColor;
+            final todaySubTextColor = today
+                ? (isDark ? Colors.black87 : Colors.white70)
+                : (timelineColor ??
+                    (isDark ? Colors.grey[400] : Colors.grey[600]));
+
             return Expanded(
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 2),
-                padding: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
                 decoration: BoxDecoration(
-                  color: today ? Colors.grey.withValues(alpha: 0.1) : null,
-                  borderRadius: BorderRadius.circular(4),
+                  color: todayBgColor,
+                  borderRadius: BorderRadius.circular(8),
+                  boxShadow: today
+                      ? [
+                          BoxShadow(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.05)
+                                : Colors.black.withValues(alpha: 0.15),
+                            blurRadius: 4,
+                            offset: const Offset(0, 2),
+                          )
+                        ]
+                      : null,
                 ),
                 child: Column(
                   children: [
@@ -141,14 +163,8 @@ class ScheduleGrid extends StatelessWidget {
                       ['一', '二', '三', '四', '五', '六', '日'][i],
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color:
-                            timelineColor ??
-                            (today
-                                ? (isDark
-                                      ? Colors.white
-                                      : Theme.of(context).primaryColor)
-                                : null),
+                        fontWeight: today ? FontWeight.bold : FontWeight.w500,
+                        color: todayTextColor,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -156,9 +172,8 @@ class ScheduleGrid extends StatelessWidget {
                       dayInfo.day,
                       style: TextStyle(
                         fontSize: 10,
-                        color:
-                            timelineColor ??
-                            (isDark ? Colors.grey[400] : Colors.grey[600]),
+                        fontWeight: today ? FontWeight.bold : FontWeight.normal,
+                        color: todaySubTextColor,
                       ),
                     ),
                   ],

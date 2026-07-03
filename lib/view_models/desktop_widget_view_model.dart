@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import '../utils/http_util.dart';
 import '../models/schedule_model.dart';
 import 'schedule_view_model.dart';
 
@@ -24,7 +24,7 @@ class DesktopWidgetViewModel extends ChangeNotifier {
 
   Future<void> fetchWeather() async {
     try {
-      final response = await http.get(
+      final response = await HttpUtil.get(
         Uri.parse('https://cqupt.ishub.top/api/weather-mi.json'),
       );
       if (response.statusCode == 200) {

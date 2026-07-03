@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http;
+import '../utils/http_util.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -43,7 +43,7 @@ class UpdateService {
   /// Returns [UpdateInfo] if a new update is available, null otherwise.
   static Future<UpdateInfo?> checkUpdate() async {
     try {
-      final response = await http.get(Uri.parse(_updateApiUrl)).timeout(
+      final response = await HttpUtil.get(Uri.parse(_updateApiUrl)).timeout(
         const Duration(seconds: 10),
       );
       if (response.statusCode == 200) {

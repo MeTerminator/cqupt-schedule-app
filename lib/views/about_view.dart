@@ -71,12 +71,14 @@ class _AboutViewState extends State<AboutView> {
     }
   }
 
-  Future<void> _launchUrl(String urlString) async {
+  Future<void> _launchUrl(String urlString, {bool inApp = false}) async {
     final url = Uri.parse(urlString);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
+      final launched = await launchUrl(
+        url,
+        mode: inApp ? LaunchMode.inAppWebView : LaunchMode.externalApplication,
+      );
+      if (!launched) {
         widget.viewModel.triggerToast('无法打开链接: $urlString');
       }
     } catch (e) {
@@ -152,7 +154,7 @@ class _AboutViewState extends State<AboutView> {
                     leading: const Icon(Icons.favorite_rounded, color: Colors.redAccent),
                     title: const Text('赞助鸣谢'),
                     trailing: const Icon(Icons.chevron_right_rounded),
-                    onTap: () => _launchUrl('https://cqupt.ishub.top/sponsor/'),
+                    onTap: () => _launchUrl('https://cqupt.ishub.top/sponsor/', inApp: true),
                   ),
                   Divider(height: 1, indent: 56, color: isDark ? Colors.grey[800] : Colors.grey[300]),
                   ListTile(
