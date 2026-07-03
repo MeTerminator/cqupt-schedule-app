@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:ui';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:io';
+
 import 'view_models/schedule_view_model.dart';
 import 'views/login_view.dart';
 import 'widgets/header_view.dart';
@@ -15,6 +17,16 @@ import 'models/theme_model.dart';
 import 'package:path_provider/path_provider.dart';
 import 'services/widget_service.dart';
 import 'services/update_service.dart';
+
+class AppScrollBehavior extends MaterialScrollBehavior {
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.trackpad,
+      };
+}
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -127,6 +139,7 @@ class _MyAppState extends State<MyApp> {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: '重邮课表',
+        scrollBehavior: AppScrollBehavior(),
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: schoolGreen,
@@ -201,6 +214,7 @@ class MainHomeView extends StatefulWidget {
 
 class _MainHomeViewState extends State<MainHomeView> {
   late PageController _pageController;
+  final FocusNode _focusNode = FocusNode();
 
   Future<Decoration?> _buildBackgroundDecoration(
     ScheduleViewModel viewModel,
@@ -244,11 +258,15 @@ class _MainHomeViewState extends State<MainHomeView> {
     _pageController = PageController(
       initialPage: widget.viewModel.selectedWeek,
     );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _focusNode.requestFocus();
+    });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
@@ -301,38 +319,57 @@ class _MainHomeViewState extends State<MainHomeView> {
           builder: (context, snapshot) {
             final decoration = snapshot.data;
 
-            return Scaffold(
-              // 如果有背景图片，设置背景为透明以显示 Container 里的图片
-              backgroundColor: decoration != null
-                  ? Colors.transparent
-                  : null,
-              body: Container(
-                decoration: decoration,
-                child: Column(
-                  children: [
-                    HeaderView(
-                      viewModel: viewModel,
-                      onUserTap: () => _showUserSheet(context),
-                    ),
-                    Expanded(
-                      child: PageView.builder(
-                        controller: _pageController,
-                        itemCount: 23,
-                        onPageChanged: (index) {
-                          viewModel.selectedWeek = index;
-                          viewModel.notifyListeners();
-                        },
-                        itemBuilder: (context, index) {
-                          return ScheduleGrid(
-                            viewModel: viewModel,
-                            weekToShow: index,
-                            onCourseTap: (course) =>
-                                _showCourseDetail(context, course),
-                          );
-                        },
+            return KeyboardListener(
+              focusNode: _focusNode,
+              autofocus: true,
+              onKeyEvent: (KeyEvent event) {
+                if (event is KeyDownEvent) {
+                  if (event.logicalKey == LogicalKeyboardKey.arrowLeft ||
+                      event.logicalKey == LogicalKeyboardKey.keyA) {
+                    if (viewModel.selectedWeek > 0) {
+                      viewModel.updateSelectedWeek(viewModel.selectedWeek - 1, animate: true);
+                    }
+                  } else if (event.logicalKey == LogicalKeyboardKey.arrowRight ||
+                             event.logicalKey == LogicalKeyboardKey.keyD) {
+                    if (viewModel.selectedWeek < 22) {
+                      viewModel.updateSelectedWeek(viewModel.selectedWeek + 1, animate: true);
+                    }
+                  }
+                }
+              },
+              child: Scaffold(
+                // 如果有背景图片，设置背景为透明以显示 Container 里的图片
+                backgroundColor: decoration != null
+                    ? Colors.transparent
+                    : null,
+                body: Container(
+                  decoration: decoration,
+                  child: Column(
+                    children: [
+                      HeaderView(
+                        viewModel: viewModel,
+                        onUserTap: () => _showUserSheet(context),
                       ),
-                    ),
-                  ],
+                      Expanded(
+                        child: PageView.builder(
+                          controller: _pageController,
+                          itemCount: 23,
+                          onPageChanged: (index) {
+                            viewModel.selectedWeek = index;
+                            viewModel.notifyListeners();
+                          },
+                          itemBuilder: (context, index) {
+                            return ScheduleGrid(
+                              viewModel: viewModel,
+                              weekToShow: index,
+                              onCourseTap: (course) =>
+                                  _showCourseDetail(context, course),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             );
