@@ -13,8 +13,7 @@ import '../views/alarm_settings_view.dart';
 import '../views/live_activity_settings_view.dart';
 import '../views/user_management_view.dart';
 import '../views/icloud_settings_view.dart';
-import 'package:package_info_plus/package_info_plus.dart';
-import '../services/update_service.dart';
+import '../views/about_view.dart';
 
 class UserDetailView extends StatefulWidget {
   final ScheduleViewModel viewModel;
@@ -31,57 +30,11 @@ class UserDetailView extends StatefulWidget {
 }
 
 class _UserDetailViewViewState extends State<UserDetailView> {
-  String _versionString = '加载中...';
+  static const Color schoolGreen = Color.fromRGBO(0, 122, 89, 1);
 
   @override
   void initState() {
     super.initState();
-    _loadVersionInfo();
-  }
-
-  Future<void> _loadVersionInfo() async {
-    try {
-      final packageInfo = await PackageInfo.fromPlatform();
-      setState(() {
-        _versionString = '${packageInfo.version} (Build ${packageInfo.buildNumber})';
-      });
-    } catch (e) {
-      setState(() {
-        _versionString = '1.0.0';
-      });
-    }
-  }
-
-  bool _isCheckingUpdate = false;
-
-  Future<void> _checkUpdateManual() async {
-    if (_isCheckingUpdate) return;
-    setState(() {
-      _isCheckingUpdate = true;
-    });
-
-    widget.viewModel.triggerToast('正在检测最新版本...');
-
-    try {
-      final updateInfo = await UpdateService.checkUpdate();
-      if (mounted) {
-        setState(() {
-          _isCheckingUpdate = false;
-        });
-        if (updateInfo != null) {
-          UpdateService.showUpdateDialog(context, updateInfo);
-        } else {
-          widget.viewModel.triggerToast('当前已经是最新版本');
-        }
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isCheckingUpdate = false;
-        });
-        widget.viewModel.triggerToast('检测更新失败: $e');
-      }
-    }
   }
 
   @override
@@ -383,8 +336,7 @@ class _UserDetailViewViewState extends State<UserDetailView> {
                       ),
 
                       const SizedBox(height: 32),
-                      // --- 版权与项目信息 ---
-                      _buildFooterInfo(context),
+                      _buildAboutButton(context),
                     ],
                   ),
                 ),
@@ -475,74 +427,33 @@ class _UserDetailViewViewState extends State<UserDetailView> {
     );
   }
 
-  Widget _buildFooterInfo(BuildContext context) {
-    return Center(
-      child: Column(
-        children: [
-          Text(
-            'GitHub: MeTerminator/cqupt-schedule-app',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            '反馈QQ群：1051832310',
-            style: TextStyle(fontSize: 12, color: Colors.grey[500]),
-          ),
-          const SizedBox(height: 12),
-          if (!kIsWeb && Platform.isAndroid) ...[
-            TextButton.icon(
-              onPressed: _checkUpdateManual,
-              icon: _isCheckingUpdate
-                  ? const SizedBox(
-                      width: 12,
-                      height: 12,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          Color.fromRGBO(0, 122, 89, 1),
-                        ),
-                      ),
-                    )
-                  : const Icon(
-                      Icons.system_update_rounded,
-                      size: 14,
-                      color: Color.fromRGBO(0, 122, 89, 1),
-                    ),
-              label: const Text(
-                '检查更新',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Color.fromRGBO(0, 122, 89, 1),
-                  fontWeight: FontWeight.bold,
-                ),
+  Widget _buildAboutButton(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 24),
+      child: SizedBox(
+        width: double.infinity,
+        child: OutlinedButton.icon(
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AboutView(viewModel: widget.viewModel),
               ),
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
-          Text(
-            '版本：$_versionString',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w300,
+            );
+          },
+          icon: const Icon(Icons.info_outline_rounded, color: schoolGreen),
+          label: const Text(
+            '关于重邮课表',
+            style: TextStyle(color: schoolGreen, fontWeight: FontWeight.bold),
+          ),
+          style: OutlinedButton.styleFrom(
+            side: const BorderSide(color: schoolGreen, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            '© 2026 MeTerminator',
-            style: TextStyle(
-              fontSize: 11,
-              color: Colors.grey[400],
-              fontWeight: FontWeight.w300,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
