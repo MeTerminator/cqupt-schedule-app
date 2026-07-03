@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
@@ -5,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/update_service.dart';
+import '../utils/http_util.dart';
 import '../view_models/schedule_view_model.dart';
 
 class AboutView extends StatefulWidget {
@@ -19,6 +21,8 @@ class AboutView extends StatefulWidget {
 class _AboutViewState extends State<AboutView> {
   String _versionString = '加载中...';
   bool _isCheckingUpdate = false;
+  String _appMessage = '正在加载公告...';
+  bool _isLoadingMessage = false;
 
   static const Color schoolGreen = Color.fromRGBO(0, 122, 89, 1);
 
@@ -26,6 +30,7 @@ class _AboutViewState extends State<AboutView> {
   void initState() {
     super.initState();
     _loadVersion();
+    _loadAppMessage();
   }
 
   Future<void> _loadVersion() async {
@@ -38,6 +43,40 @@ class _AboutViewState extends State<AboutView> {
       setState(() {
         _versionString = '1.0.0';
       });
+    }
+  }
+
+  Future<void> _loadAppMessage() async {
+    if (_isLoadingMessage) return;
+    setState(() {
+      _isLoadingMessage = true;
+      _appMessage = '正在加载公告...';
+    });
+    try {
+      final response = await HttpUtil.get(Uri.parse('https://cqupt.ishub.top/app_message.txt'));
+      if (response.statusCode == 200) {
+        final message = utf8.decode(response.bodyBytes);
+        if (mounted) {
+          setState(() {
+            _appMessage = message.trim();
+            _isLoadingMessage = false;
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _appMessage = '加载失败，点击重新加载';
+            _isLoadingMessage = false;
+          });
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _appMessage = '加载失败，点击重新加载';
+          _isLoadingMessage = false;
+        });
+      }
     }
   }
 
@@ -115,7 +154,7 @@ class _AboutViewState extends State<AboutView> {
               width: 80,
               height: 80,
               decoration: BoxDecoration(
-                color: schoolGreen.withOpacity(0.1),
+                color: schoolGreen.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: const Icon(
@@ -193,7 +232,74 @@ class _AboutViewState extends State<AboutView> {
                 ],
               ),
             ),
-            const SizedBox(height: 64),
+            const SizedBox(height: 24),
+
+            // App Message (公告)
+            GestureDetector(
+              onTap: _loadAppMessage,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.grey[900] : Colors.grey[100],
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isDark ? Colors.grey[800]! : Colors.grey[300]!,
+                    width: 1,
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.campaign_rounded,
+                          size: 18,
+                          color: schoolGreen,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          '最新公告',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: schoolGreen,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (_isLoadingMessage)
+                          const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 1.5,
+                              valueColor: AlwaysStoppedAnimation<Color>(schoolGreen),
+                            ),
+                          )
+                        else
+                          Icon(
+                            Icons.refresh_rounded,
+                            size: 14,
+                            color: Colors.grey[500],
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _appMessage,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.grey[300] : Colors.grey[800],
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
             // Copyright Info
             Text(
               '© 2026 MeTerminator',
