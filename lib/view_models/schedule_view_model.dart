@@ -23,6 +23,7 @@ class ScheduleViewModel extends ChangeNotifier {
   Map<String, int> courseColorMap = {}; // 课程颜色索引映射
   Map<String, String> courseCustomColorMap = {}; // 课程自定义颜色 Hex 映射
   ThemeSettings currentTheme = ThemeSettings.defaultTheme(); // 当前主题设置
+  Map<String, dynamic>? adjustmentsData; // 节假日调休数据
 
   // --- 多账号与共同空闲时间管理状态 ---
   List<String> userProfiles = []; // 所有已添加学号列表
@@ -86,6 +87,7 @@ class ScheduleViewModel extends ChangeNotifier {
     loadHiddenRules();
     loadCommonFreeTimeSettings(); // 加载共同空闲时间设置
     _loadICloudSyncSettings(); // 加载 iCloud 同步设置
+    loadAdjustmentsSettings(); // 加载节假日调休缓存
   }
 
   @override
@@ -267,6 +269,7 @@ class ScheduleViewModel extends ChangeNotifier {
     if (!kIsWeb) {
       await WidgetService.syncToWidget(this);
     }
+    fetchAdjustments().catchError((e) => debugPrint("Error fetching adjustments in startup: $e"));
     refreshData(silent: true);
   }
 
@@ -428,6 +431,7 @@ class ScheduleViewModel extends ChangeNotifier {
     }
 
     try {
+      fetchAdjustments().catchError((e) => debugPrint("Error fetching adjustments in refresh: $e"));
       final url = Uri.parse(
         "https://cqupt.ishub.top/api/curriculum/$currentId/curriculum.json",
       );
@@ -837,6 +841,7 @@ class ScheduleViewModel extends ChangeNotifier {
       if (response.statusCode == 200) {
         final body = response.body;
         final decoded = ScheduleResponse.fromJson(jsonDecode(body));
+        fetchAdjustments().catchError((e) => debugPrint("Error fetching adjustments in addUserProfile: $e"));
         if (decoded.studentId.isEmpty) {
           triggerToast("无法解析课表数据，添加失败");
           return false;
@@ -1174,6 +1179,35 @@ class ScheduleViewModel extends ChangeNotifier {
 
   Future<void> applyThemePreset(ThemeSettings preset) async {
     await saveThemeSettings(preset);
+  }
+
+  Future<void> loadAdjustmentsSettings() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final cacheStr = prefs.getString('curriculum_adjustments_cache');
+      if (cacheStr != null) {
+        adjustmentsData = jsonDecode(cacheStr) as Map<String, dynamic>;
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error loading adjustments cache: $e");
+    }
+  }
+
+  Future<void> fetchAdjustments() async {
+    try {
+      final url = Uri.parse("https://cqupt.ishub.top/api/curriculum/adjustments");
+      final response = await HttpUtil.get(url);
+      if (response.statusCode == 200) {
+        final body = response.body;
+        adjustmentsData = jsonDecode(body) as Map<String, dynamic>;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('curriculum_adjustments_cache', body);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching adjustments: $e");
+    }
   }
 
   Color? get headerTextColor {

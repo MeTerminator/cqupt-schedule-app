@@ -317,6 +317,42 @@ class ScheduleGrid extends StatelessWidget {
     );
   }
 
+  DateTime? getColumnDateTime(int columnIndex) {
+    if (viewModel.scheduleData == null) return null;
+    final startStr = viewModel.scheduleData!.week1Monday.substring(0, 10);
+    DateTime startDate;
+    try {
+      startDate = DateTime.parse(startStr);
+    } catch (e) {
+      return null;
+    }
+    final weekStartDay = viewModel.currentTheme.weekStartDay;
+    final offset = (weekToShow - 1) * 7 + getDayOffsetFromMonday(columnIndex, weekStartDay);
+    return startDate.add(Duration(days: offset));
+  }
+
+  String? getColumnDateString(int columnIndex) {
+    final date = getColumnDateTime(columnIndex);
+    if (date == null) return null;
+    return "${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}";
+  }
+
+  String? getSuspendReason(String dateStr) {
+    final adj = viewModel.adjustmentsData;
+    if (adj == null) return null;
+    for (var entry in adj.entries) {
+      final reason = entry.key;
+      final val = entry.value;
+      if (val is Map && val['days_suspend'] is List) {
+        final list = val['days_suspend'] as List;
+        if (list.contains(dateStr)) {
+          return reason;
+        }
+      }
+    }
+    return null;
+  }
+
   Widget _buildCourseGrid(
     BuildContext context,
     List<CourseInstance> courses,
@@ -460,10 +496,132 @@ class ScheduleGrid extends StatelessWidget {
                   ),
                 );
               }),
+
+              // 绘制节假日停课阴影覆盖层
+              ...List.generate(7, (colIndex) {
+                final dateStr = getColumnDateString(colIndex);
+                if (dateStr == null) return const SizedBox.shrink();
+                final reason = getSuspendReason(dateStr);
+                if (reason == null) return const SizedBox.shrink();
+
+                return Positioned(
+                  left: colIndex * colW + 1,
+                  top: 0,
+                  width: colW - 2,
+                  height: hourHeight * 12,
+                  child: IgnorePointer(
+                    child: Stack(
+                      children: [
+                        CustomPaint(
+                          size: Size(colW - 2, hourHeight * 12),
+                          painter: StripedPainter(
+                            color: isDark
+                                ? Colors.red.withValues(alpha: 0.15)
+                                : Colors.red.withValues(alpha: 0.1),
+                            strokeWidth: 3.0,
+                            gap: 6.0,
+                          ),
+                        ),
+                        Positioned(
+                          top: 15,
+                          left: 2,
+                          right: 2,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red[600],
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                                child: const Text(
+                                  '停课',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 4,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: isDark
+                                      ? Colors.black.withValues(alpha: 0.87)
+                                      : Colors.white.withValues(alpha: 0.9),
+                                  borderRadius: BorderRadius.circular(4),
+                                  border: Border.all(
+                                    color: Colors.red.withValues(alpha: 0.3),
+                                    width: 0.5,
+                                  ),
+                                ),
+                                child: Text(
+                                  reason,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: isDark ? Colors.red[200] : Colors.red[800],
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
             ],
           );
         },
       ),
     );
+  }
+}
+
+class StripedPainter extends CustomPainter {
+  final Color color;
+  final double strokeWidth;
+  final double gap;
+
+  StripedPainter({
+    required this.color,
+    this.strokeWidth = 3.0,
+    this.gap = 6.0,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.clipRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = strokeWidth
+      ..style = PaintingStyle.stroke;
+
+    final double step = strokeWidth + gap;
+    for (double i = -size.height; i < size.width; i += step) {
+      canvas.drawLine(
+        Offset(i, 0),
+        Offset(i + size.height, size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant StripedPainter oldDelegate) {
+    return oldDelegate.color != color ||
+        oldDelegate.strokeWidth != strokeWidth ||
+        oldDelegate.gap != gap;
   }
 }
