@@ -93,7 +93,7 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
               ),
               Expanded(
                 child: Text(
-                  '第 20 周',
+                  '第 22 周',
                   textAlign: TextAlign.end,
                   style: TextStyle(fontSize: 12, color: Colors.grey[600]),
                 ),
@@ -103,8 +103,8 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
           Slider(
             value: _selectedWeek,
             min: 0,
-            max: 20,
-            divisions: 20,
+            max: 22,
+            divisions: 22,
             label: _getWeekLabel(_selectedWeek),
             activeColor: widget.viewModel.headerTextColor ?? Colors.orange,
             onChanged: (value) {

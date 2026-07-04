@@ -209,12 +209,43 @@ class ScheduleGrid extends StatelessWidget {
     );
   }
 
+  int? getHighlightedPeriod() {
+    final now = DateTime.now();
+    final currentMinutes = now.hour * 60 + now.minute;
+
+    // First check if there is an ongoing period
+    for (int p = 1; p <= 12; p++) {
+      final t = timeTable[p];
+      if (t == null) continue;
+      final start = toMinutes(t['begin']!);
+      final end = toMinutes(t['end']!);
+      if (currentMinutes >= start && currentMinutes <= end) {
+        return p;
+      }
+    }
+
+    // If not, find the first upcoming period
+    for (int p = 1; p <= 12; p++) {
+      final t = timeTable[p];
+      if (t == null) continue;
+      final start = toMinutes(t['begin']!);
+      if (currentMinutes < start) {
+        return p;
+      }
+    }
+
+    return null;
+  }
+
   Widget _buildTimeColumn(bool isDark) {
     final timelineColor = viewModel.timelineTextColor;
+    final highlightedPeriod = getHighlightedPeriod();
+
     return Column(
       children: List.generate(12, (i) {
         final period = i + 1;
         final t = timeTable[period];
+        final isHighlighted = period == highlightedPeriod;
         Color bgColor;
         if (period <= 4) {
           bgColor = Colors.green.withValues(alpha: 0.12);
@@ -231,15 +262,34 @@ class ScheduleGrid extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text(
-                '$period',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color:
-                      timelineColor ??
-                      (isDark ? Colors.grey[400] : Colors.grey[600]),
+              if (isHighlighted)
+                Container(
+                  width: 20,
+                  height: 20,
+                  alignment: Alignment.center,
+                  decoration: const BoxDecoration(
+                    color: Color.fromRGBO(0, 122, 89, 1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Text(
+                    '$period',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                )
+              else
+                Text(
+                  '$period',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color:
+                        timelineColor ??
+                        (isDark ? Colors.grey[400] : Colors.grey[600]),
+                  ),
                 ),
-              ),
               if (t != null) ...[
                 Text(
                   t['begin']!,

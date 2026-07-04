@@ -121,9 +121,9 @@ class _CalendarExportViewState extends State<CalendarExportView> {
     setState(() => _isLoading = true);
 
     try {
-      // 3. 汇总 0-20 周所有课程实例（包含自定义课程）
+      // 3. 汇总 0-22 周所有课程实例（包含自定义课程）
       final allInstances = <CourseInstance>[];
-      for (int w = 0; w <= 20; w++) {
+      for (int w = 0; w <= 22; w++) {
         allInstances.addAll(widget.viewModel.allCourses(w));
       }
 

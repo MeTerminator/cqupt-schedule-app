@@ -574,8 +574,7 @@ class ScheduleViewModel extends ChangeNotifier {
       firstMondayDate = DateTime(date.year, date.month, date.day);
 
       if (autoJump) {
-        final real = calculateCurrentRealWeek();
-        selectedWeek = real.clamp(0, 22);
+        selectedWeek = targetWeek;
         // 初始加载时不使用动画
         shouldAnimateToWeek = false;
       }
