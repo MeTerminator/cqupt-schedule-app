@@ -33,6 +33,20 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
   @override
   Widget build(BuildContext context) {
     final realWeek = widget.viewModel.calculateCurrentRealWeek();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    // 根据亮暗模式下的对比度安全计算高亮色：
+    // 若用户配置的 headerTextColor 太亮（如浅色模式下的纯白色）或太暗（如深色模式下的黑色），
+    // 则回退使用主题的 primary 颜色以保证文字清晰可见。
+    Color accentColor =
+        widget.viewModel.headerTextColor ??
+        Theme.of(context).colorScheme.primary;
+    final double luminance = accentColor.computeLuminance();
+    if (isDark && luminance < 0.15) {
+      accentColor = Theme.of(context).colorScheme.primary;
+    } else if (!isDark && luminance > 0.85) {
+      accentColor = Theme.of(context).colorScheme.primary;
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -47,14 +61,18 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
             width: 40,
             height: 4,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
+              color: isDark ? Colors.grey[700] : Colors.grey[300],
               borderRadius: BorderRadius.circular(2),
             ),
           ),
           const SizedBox(height: 24),
           Text(
             '选择周数',
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: isDark ? Colors.white : Colors.black87,
+            ),
           ),
           const SizedBox(height: 32),
           Row(
@@ -66,9 +84,7 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
                   vertical: 12,
                 ),
                 decoration: BoxDecoration(
-                  color:
-                      widget.viewModel.headerTextColor?.withValues(alpha: 0.1) ??
-                      Colors.orange.withValues(alpha: 0.1),
+                  color: accentColor.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -76,7 +92,7 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: widget.viewModel.headerTextColor ?? Colors.orange,
+                    color: accentColor,
                   ),
                 ),
               ),
@@ -88,14 +104,20 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
               Expanded(
                 child: Text(
                   '第 0 周',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                 ),
               ),
               Expanded(
                 child: Text(
                   '第 22 周',
                   textAlign: TextAlign.end,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  ),
                 ),
               ),
             ],
@@ -106,7 +128,8 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
             max: 22,
             divisions: 22,
             label: _getWeekLabel(_selectedWeek),
-            activeColor: widget.viewModel.headerTextColor ?? Colors.orange,
+            activeColor: accentColor,
+            inactiveColor: accentColor.withValues(alpha: 0.24),
             onChanged: (value) {
               setState(() {
                 _selectedWeek = value;
@@ -122,11 +145,18 @@ class _WeekSelectorDialogState extends State<WeekSelectorDialog> {
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.info_outline, size: 16, color: Colors.grey[600]),
+              Icon(
+                Icons.info_outline,
+                size: 16,
+                color: isDark ? Colors.grey[400] : Colors.grey[600],
+              ),
               const SizedBox(width: 8),
               Text(
                 '当前实际周数：第$realWeek周',
-                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                ),
               ),
             ],
           ),
