@@ -16,7 +16,13 @@ flutter precache --ios
 # 3. Install Flutter project dependencies
 flutter pub get
 
-# 4. Install CocoaPods and dependencies
+# 4. Sync Xcode project config (incl. Swift Package Manager deployment target
+# fix-up for plugins like home_widget that require a higher iOS version than
+# FlutterGeneratedPluginSwiftPackage's default). --config-only skips the
+# actual compile since Xcode Cloud's own Archive action does that.
+flutter build ios --release --no-codesign --config-only
+
+# 5. Install CocoaPods and dependencies
 HOMEBREW_NO_AUTO_UPDATE=1 brew install cocoapods
 cd ios
 pod install --repo-update
